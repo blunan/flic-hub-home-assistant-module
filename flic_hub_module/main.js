@@ -31,8 +31,8 @@ buttonManager.on("buttonSingleOrDoubleClickOrHold", function(obj) {
 	var button = buttonManager.getButton(obj.bdaddr);
 	if(timestamp - lasClickTimestamp >= MIN_EVENTS_OFFSET) {
 		lasClickTimestamp = timestamp;
-		button.clickType = obj.isSingleClick ? "single-click" : obj.isDoubleClick ? "double-click" : "hold";
-		console.log(JSON.stringify(button));
+		button.clickType = obj.isSingleClick ? "single" : obj.isDoubleClick ? "double" : "hold";
+		sendButtonEvent(button);
 	} else {
 		console.log("Event was ignored");
 	}
@@ -54,6 +54,19 @@ function sendButtonState(button, state) {
 			'attributes': {
 				'friendly_name': data.name == null ? getButtonName(data) : data.name
 			}
+		})
+	});
+}
+
+function sendButtonEvent(event) {
+	var data = JSON.parse(JSON.stringify(event));
+	notifyHomeAssistant({
+		'method': "POST",
+		'url': SERVER_HOST + "/api/events/flic_click",
+		'content': JSON.stringify({
+			'button_name': getButtonName(data),
+			'button_address': data.bdaddr,
+			'click_type': data.clickType
 		})
 	});
 }
