@@ -29,6 +29,7 @@ buttonManager.on("buttonDeleted", function(obj) {
 buttonManager.on("buttonSingleOrDoubleClickOrHold", function(obj) {
 	const timestamp = Date.now();
 	var button = buttonManager.getButton(obj.bdaddr);
+	sendButtonState(button, 'on');
 	if(timestamp - lasClickTimestamp >= MIN_EVENTS_OFFSET) {
 		lasClickTimestamp = timestamp;
 		button.clickType = obj.isSingleClick ? "single" : obj.isDoubleClick ? "double" : "hold";
