@@ -1,3 +1,4 @@
+const requestManager = require("http");
 const buttonManager = require("buttons");
 
 //--------------------------------------------------------------------------------//
@@ -12,17 +13,17 @@ const SERVER_AUTH_TOKEN = 'Your Long-Lived Access Token';
 
 buttonManager.on("buttonReady", function(obj) {
 	var button = buttonManager.getButton(obj.bdaddr);
-	console.log(JSON.stringify(button));
+	sendButtonState(button, 'on');
 });
 
 buttonManager.on("buttonDisconnected", function(obj) {
 	var button = buttonManager.getButton(obj.bdaddr);
-	console.log(JSON.stringify(button));
+	sendButtonState(button, 'off');
 });
 
 buttonManager.on("buttonDeleted", function(obj) {
 	var button = buttonManager.getButton(obj.bdaddr);
-	console.log(JSON.stringify(button));
+	sendButtonState(button, 'off');
 });
 
 buttonManager.on("buttonSingleOrDoubleClickOrHold", function(obj) {
@@ -36,3 +37,36 @@ buttonManager.on("buttonSingleOrDoubleClickOrHold", function(obj) {
 		console.log("Event was ignored");
 	}
 });
+
+//--------------------------------------------------------------------------------//
+
+function getButtonName(data) {
+	return 'flic_' + data.bdaddr.replace(new RegExp(':', 'g'), '');
+}
+
+function sendButtonState(button, state) {
+	var data = JSON.parse(JSON.stringify(button));
+	notifyHomeAssistant({
+		'method': "POST",
+		'url': SERVER_HOST + "/api/states/binary_sensor." + getButtonName(data),
+		'content': JSON.stringify({
+			'state': state,
+			'attributes': {
+				'friendly_name': data.name == null ? getButtonName(data) : data.name
+			}
+		})
+	});
+}
+
+function notifyHomeAssistant(options) {
+	options.headers = {
+		'Authorization': 'Bearer ' + SERVER_AUTH_TOKEN,
+		'Content-Type': 'application/json'
+	};
+	requestManager.makeRequest(options, function (error, result) {
+		if(error = null) {
+			console.log(JSON.stringify(options));
+			console.log(error);
+		}
+	});
+}
