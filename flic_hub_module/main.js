@@ -1,13 +1,6 @@
+const CONFIG = require("./config");
 const requestManager = require("http");
 const buttonManager = require("buttons");
-
-//--------------------------------------------------------------------------------//
-
-var lasClickTimestamp = 0;
-const MIN_EVENTS_OFFSET = 600;
-
-const SERVER_HOST = 'http://192.168.XXX.YYY:8123';
-const SERVER_AUTH_TOKEN = 'Your Long-Lived Access Token';
 
 //--------------------------------------------------------------------------------//
 
@@ -26,11 +19,12 @@ buttonManager.on("buttonDeleted", function(obj) {
 	sendButtonState(button, 'off');
 });
 
+var lasClickTimestamp = 0;
 buttonManager.on("buttonSingleOrDoubleClickOrHold", function(obj) {
 	const timestamp = Date.now();
 	var button = buttonManager.getButton(obj.bdaddr);
 	sendButtonState(button, 'on');
-	if(timestamp - lasClickTimestamp >= MIN_EVENTS_OFFSET) {
+	if(timestamp - lasClickTimestamp >= CONFIG.MIN_EVENTS_OFFSET) {
 		lasClickTimestamp = timestamp;
 		button.clickType = obj.isSingleClick ? "single" : obj.isDoubleClick ? "double" : "hold";
 		sendButtonEvent(button);
@@ -49,7 +43,7 @@ function sendButtonState(button, state) {
 	var data = JSON.parse(JSON.stringify(button));
 	notifyHomeAssistant({
 		'method': "POST",
-		'url': SERVER_HOST + "/api/states/binary_sensor." + getButtonName(data),
+		'url': CONFIG.SERVER_HOST + "/api/states/binary_sensor." + getButtonName(data),
 		'content': JSON.stringify({
 			'state': state,
 			'attributes': {
@@ -63,7 +57,7 @@ function sendButtonEvent(event) {
 	var data = JSON.parse(JSON.stringify(event));
 	notifyHomeAssistant({
 		'method': "POST",
-		'url': SERVER_HOST + "/api/events/flic_click",
+		'url': CONFIG.SERVER_HOST + "/api/events/flic_click",
 		'content': JSON.stringify({
 			'button_name': getButtonName(data),
 			'button_address': data.bdaddr,
@@ -74,7 +68,7 @@ function sendButtonEvent(event) {
 
 function notifyHomeAssistant(options) {
 	options.headers = {
-		'Authorization': 'Bearer ' + SERVER_AUTH_TOKEN,
+		'Authorization': 'Bearer ' + CONFIG.SERVER_AUTH_TOKEN,
 		'Content-Type': 'application/json'
 	};
 	requestManager.makeRequest(options, function (error, result) {
