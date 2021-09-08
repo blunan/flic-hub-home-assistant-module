@@ -3,8 +3,10 @@ const buttonManager = require("buttons");
 //--------------------------------------------------------------------------------//
 
 var lasClickTimestamp = 0;
-
 const MIN_EVENTS_OFFSET = 600;
+
+const SERVER_HOST = 'http://192.168.XXX.YYY:8123';
+const SERVER_AUTH_TOKEN = 'Your Long-Lived Access Token';
 
 //--------------------------------------------------------------------------------//
 
