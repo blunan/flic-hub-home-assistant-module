@@ -3,7 +3,6 @@ import argparse
 import feedparser
 from datetime import datetime
 import urllib.parse as urlparse
-from urllib.parse import parse_qs
 
 # Install dependencies
 # brew install python3
@@ -20,9 +19,9 @@ def ssn() :
 	for entry in feed['entries'] :
 		link = entry['link']
 		url = urlparse.urlparse(link)
-		location = parse_qs(url.query)['loc'][0].strip()
-		magnitude = float(parse_qs(url.query)['ma'][0])
-		date = datetime.strptime(parse_qs(url.query)['fecha'][0] + " " + parse_qs(url.query)['hora'][0], '%Y-%m-%d %H:%M:%S').astimezone(arguments.last_occurrence_datime.tzinfo)
+		location = urlparse.parse_qs(url.query)['loc'][0].strip()
+		magnitude = float(urlparse.parse_qs(url.query)['ma'][0])
+		date = datetime.strptime(urlparse.parse_qs(url.query)['fecha'][0] + " " + urlparse.parse_qs(url.query)['hora'][0], '%Y-%m-%d %H:%M:%S').astimezone(arguments.last_occurrence_datime.tzinfo)
 		if date >= arguments.last_occurrence_datime :
 			if magnitude >= arguments.min_magnitude :
 				return {'magnitude': magnitude, 'location': location, 'date': str(date.isoformat())}
