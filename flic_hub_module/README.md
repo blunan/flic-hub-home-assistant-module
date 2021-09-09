@@ -1,4 +1,5 @@
 # Flic Hub Module for Home Assistant
+
 This module uses the [Flic Hub SDK](https://flic.io/flic-hub-sdk) to send your Flic Button events and states to the [Home Assistant REST API](https://developers.home-assistant.io/docs/api/rest).
 
 > If you have any automations running with the **flicd add-on** from [pschmitt’s repository](https://github.com/pschmitt/home-assistant-addons) they will continue to work after pairing the same Flic Button to the Flic Hub as the events sent by the module keeps the same [type and data](https://www.home-assistant.io/integrations/flic).
