@@ -4,6 +4,23 @@ const buttonManager = require("buttons");
 
 //--------------------------------------------------------------------------------//
 
+function syncButtons() {
+	var buttons = buttonManager.getButtons();
+	for (var i = 0; i < buttons.length; i++) {
+		const button = buttons[i];
+		if(button.ready) {
+			sendButtonState(button, 'on');
+		} else {
+			sendButtonState(button, 'off');
+		}
+	}
+}
+
+syncButtons()
+setTimeout(syncButtons, CONFIG.SYNC_TIME);
+
+//--------------------------------------------------------------------------------//
+
 buttonManager.on("buttonReady", function(obj) {
 	var button = buttonManager.getButton(obj.bdaddr);
 	sendButtonState(button, 'on');
