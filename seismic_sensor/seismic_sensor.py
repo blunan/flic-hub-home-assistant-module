@@ -29,7 +29,7 @@ parser.add_argument('-d', '--last_earthquake', dest = 'last_earthquake_datetime'
 arguments = parser.parse_args()
 
 def isValidData(date, magnitude) :
-	return (magnitude >= arguments.min_magnitude) and (date >= arguments.last_earthquake_datetime)
+	return (magnitude >= arguments.min_magnitude) and (date.astimezone(arguments.last_earthquake_datetime.tzinfo) >= arguments.last_earthquake_datetime)
 
 def check_ssn() :
 	feed = feedparser.parse('http://www.ssn.unam.mx/rss/ultimos-sismos.xml')
@@ -39,7 +39,7 @@ def check_ssn() :
 			url = urlparse.urlparse(link)
 			location = urlparse.parse_qs(url.query)['loc'][0].strip()
 			magnitude = float(urlparse.parse_qs(url.query)['ma'][0])
-			date = datetime.strptime(urlparse.parse_qs(url.query)['fecha'][0] + " " + urlparse.parse_qs(url.query)['hora'][0], '%Y-%m-%d %H:%M:%S').astimezone(arguments.last_earthquake_datetime.tzinfo)
+			date = datetime.strptime(urlparse.parse_qs(url.query)['fecha'][0] + " " + urlparse.parse_qs(url.query)['hora'][0], '%Y-%m-%d %H:%M:%S')
 			if isValidData(date, magnitude)  :
 				return {'magnitude': magnitude, 'location': location, 'date': date.isoformat()}
 		except :
@@ -62,7 +62,7 @@ def check_sasmex() :
 				continue
 			columns = row.contents
 			magnitude = float(columns[9].text.strip())
-			date = datetime.strptime(columns[3].contents[1].text.strip() + " " + columns[5].text.strip(), '%Y-%m-%d %H:%M:%S').astimezone(arguments.last_earthquake_datetime.tzinfo)
+			date = datetime.strptime(columns[3].contents[1].text.strip() + " " + columns[5].text.strip(), '%Y-%m-%d %H:%M:%S')
 			if isValidData(date, magnitude) :
 				return {'magnitude': magnitude, 'location': 'N/A', 'date': date.isoformat()}
 		except :
