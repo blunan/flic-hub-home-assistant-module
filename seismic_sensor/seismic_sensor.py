@@ -1,3 +1,15 @@
+"""Cheks for earthquake alerts and returns the earthquake's magnitude, location and date.
+
+Version:
+	1.0.0
+
+Author:
+	Brayan Luna <blun4n@gmail.com> (https://www.blunan.com)
+
+License:
+	MIT
+"""
+
 import json
 import argparse
 import requests
