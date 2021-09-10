@@ -4,7 +4,7 @@ This module uses the [Flic Hub SDK](https://flic.io/flic-hub-sdk) to send your F
 
 > If you have any automations running with the **flicd add-on** from [pschmitt’s repository](https://github.com/pschmitt/home-assistant-addons) they will continue to work after pairing the same Flic Button to the Flic Hub as the events sent by the module keeps the same [type and data](https://www.home-assistant.io/integrations/flic).
 
-## How to use
+## Set up
 
 First you need to create a module on your Flic Hub using their [Online IDE](https://hubsdk.flic.io) and copy-paste the `config.js`, `constants.js`, `main.js` and `module.json` files. It should look like this:
 
@@ -20,7 +20,7 @@ Then edit the `config.js` file so the Flic Hub can connect to your Home Assistan
 
 > Be sure you have the **API** component enabled in your Home Asistant instance (enabled by default). In case you have any troubles see their [documentation](https://www.home-assistant.io/integrations/api) to know how to enable it.
 
-## Running automations with your Flics
+## Run automations with your Flics
 
 To run automations using `flic_click` events your scripts should look like this:
 
