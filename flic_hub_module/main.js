@@ -1,3 +1,4 @@
+const C = require("./constants");
 const CONFIG = require("./config");
 const requestManager = require("http");
 const buttonManager = require("buttons");
@@ -9,9 +10,9 @@ function syncButtons() {
 	for (var i = 0; i < buttons.length; i++) {
 		const button = buttons[i];
 		if(button.ready) {
-			sendButtonState(button, 'on');
+			sendButtonState(button, C.STATE_ON);
 		} else {
-			sendButtonState(button, 'off');
+			sendButtonState(button, C.STATE_OFF);
 		}
 	}
 }
@@ -23,27 +24,27 @@ setTimeout(syncButtons, CONFIG.SYNC_TIME);
 
 buttonManager.on("buttonReady", function(obj) {
 	var button = buttonManager.getButton(obj.bdaddr);
-	sendButtonState(button, 'on');
+	sendButtonState(button, C.STATE_ON);
 });
 
 buttonManager.on("buttonDisconnected", function(obj) {
 	var button = buttonManager.getButton(obj.bdaddr);
-	sendButtonState(button, 'off');
+	sendButtonState(button, C.STATE_OFF);
 });
 
 buttonManager.on("buttonDeleted", function(obj) {
 	var button = buttonManager.getButton(obj.bdaddr);
-	sendButtonState(button, 'off');
+	sendButtonState(button, C.STATE_UNKNOWN);
 });
 
 var lasClickTimestamp = 0;
 buttonManager.on("buttonSingleOrDoubleClickOrHold", function(obj) {
 	const timestamp = Date.now();
 	var button = buttonManager.getButton(obj.bdaddr);
-	sendButtonState(button, 'on');
+	sendButtonState(button, C.STATE_ON);
 	if(timestamp - lasClickTimestamp >= CONFIG.MIN_EVENTS_OFFSET) {
 		lasClickTimestamp = timestamp;
-		button.clickType = obj.isSingleClick ? "single" : obj.isDoubleClick ? "double" : "hold";
+		button.clickType = obj.isSingleClick ? C.CLICK_SINGLE : obj.isDoubleClick ? C.CLICK_DOUBLE : C.CLICK_HOLD;
 		sendButtonEvent(button);
 	} else {
 		console.log("Event was ignored");
