@@ -29,7 +29,7 @@ parser.add_argument('-d', '--last_earthquake', dest = 'last_earthquake_datetime'
 arguments = parser.parse_args()
 
 def isValidData(date, magnitude) :
-	return (magnitude >= arguments.min_magnitude) and (date.astimezone(arguments.last_earthquake_datetime.tzinfo) >= arguments.last_earthquake_datetime)
+	return (magnitude >= arguments.min_magnitude) and (date.astimezone(arguments.last_earthquake_datetime.tzinfo).timestamp() >= arguments.last_earthquake_datetime.timestamp())
 
 def check_ssn() :
 	feed = feedparser.parse('http://www.ssn.unam.mx/rss/ultimos-sismos.xml')
