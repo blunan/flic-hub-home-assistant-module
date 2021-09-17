@@ -90,9 +90,12 @@ function notifyHomeAssistant(options) {
 		'Content-Type': 'application/json'
 	};
 	requestManager.makeRequest(options, function (error, result) {
-		if(error = null) {
+		if(error != null)  {
 			console.log(JSON.stringify(options));
-			console.log(error);
+			console.log(JSON.stringify(error));
+		} else if(result.statusCode >= 300) {
+			console.log(JSON.stringify(options));
+			console.log(JSON.stringify(result));
 		}
 	});
 }
