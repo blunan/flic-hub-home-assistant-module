@@ -70,6 +70,7 @@ function sendButtonState(button, state) {
 		'content': JSON.stringify({
 			'state': state,
 			'attributes': {
+				'batteryStatus': data.batteryStatus,
 				'friendly_name': data.name == null ? getButtonName(data) : data.name
 			}
 		})
