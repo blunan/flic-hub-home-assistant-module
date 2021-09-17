@@ -2,7 +2,7 @@
 
 This python script runs on your Home Asssitant instance and cheks for earthquake alerts, the sript returns the earthquake's `magnitude`, `location` and `date`.
 
-> This script is intended for poeople in Mexico (like me), I will **NOT** work on supporting other countries.
+> This script is intended for people in Mexico (like me), I will **NOT** work on supporting other countries.
 
 ## Set up
 
