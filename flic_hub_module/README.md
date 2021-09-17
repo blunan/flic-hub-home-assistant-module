@@ -6,7 +6,7 @@ This module uses the [Flic Hub SDK](https://flic.io/flic-hub-sdk) to send your F
 
 ## Set up
 
-First you need to create a module on your Flic Hub using their [Online IDE](https://hubsdk.flic.io) and copy-paste the `config.js`, `constants.js`, `main.js` and `module.json` files. It should look like this:
+First you need to create a module on your Flic Hub using their [Online IDE](https://hubsdk.flic.io) and copy-paste the `config.js`, `main.js` and `module.json` files. It should look like this:
 
 ![Flic Hub Online IDE](../res/FlicHubOnlineIDE.png?raw=true "Flic Hub Online IDE")
 
