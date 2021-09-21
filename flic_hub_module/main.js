@@ -23,7 +23,7 @@ function syncButtons() {
 }
 
 syncButtons()
-setTimeout(syncButtons, CONFIG.SYNC_TIME);
+setInterval(syncButtons, CONFIG.SYNC_TIME);
 
 //--------------------------------------------------------------------------------//
 
