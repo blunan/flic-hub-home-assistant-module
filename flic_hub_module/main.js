@@ -46,7 +46,6 @@ var lasClickTimestamp = 0;
 buttonManager.on("buttonSingleOrDoubleClickOrHold", function(obj) {
 	const timestamp = Date.now();
 	var button = buttonManager.getButton(obj.bdaddr);
-	sendButtonState(button, STATE_ON);
 	if(timestamp - lasClickTimestamp >= CONFIG.MIN_EVENTS_OFFSET) {
 		lasClickTimestamp = timestamp;
 		button.clickType = obj.isSingleClick ? CLICK_SINGLE : obj.isDoubleClick ? CLICK_DOUBLE : CLICK_HOLD;
