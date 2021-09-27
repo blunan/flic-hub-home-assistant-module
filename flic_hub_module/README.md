@@ -12,12 +12,13 @@ First you need to create a module on your Flic Hub using their [Online IDE](http
 
 Then edit the `config.js` file so the Flic Hub can connect to your Home Assistant REST API.
 
-| Param               | Value   | Description |
-| :------------------ | :-----: | :---------- |
-| `MIN_EVENTS_OFFSET` | Integer | When the time elapsed between two events is less than `MIN_EVENTS_OFFSET` milliseconds, the most recent event will be ignored. Events like `double` and `hold` sometimes trigger a `single` event when you release the button |
-| `SYNC_TIME`         | Integer | Defines how often (in milliseconds) the state for all the buttons will be reported to Home Assistant | 
-| `SERVER_HOST`       | String  | The URL where your Home Assistant instance is running. Example: `http://192.168.XXX.YYY:8123` |
-| `SERVER_AUTH_TOKEN` | String  | A **Long-Lived Access Token** obtained from [your profile](https://www.home-assistant.io/docs/authentication/#your-account-profile) `http://192.168.XXX.YYY:8123/profile` |
+| Param                   | Value   | Description |
+| :---------------------- | :-----: | :---------- |
+| `MIN_EVENTS_OFFSET`     | Integer | When the time elapsed between two events is less than `MIN_EVENTS_OFFSET` milliseconds, the most recent event will be ignored. Events like `double` and `hold` sometimes trigger a `single` event when you release the button |
+| `SYNC_TIME`             | Integer | Defines how often (in milliseconds) the state for all the buttons will be reported to Home Assistant |
+| `WARNING_BATTERY_LEVEL` | Integer | If battery level is below this value (in percentage), a battery warning icon will be shown |
+| `SERVER_HOST`           | String  | The URL where your Home Assistant instance is running. Example: `http://192.168.XXX.YYY:8123` |
+| `SERVER_AUTH_TOKEN`     | String  | A **Long-Lived Access Token** obtained from [your profile](https://www.home-assistant.io/docs/authentication/#your-account-profile) `http://192.168.XXX.YYY:8123/profile` |
 
 > Be sure you have the **API** component enabled in your Home Asistant instance (enabled by default). In case you have any troubles see their [documentation](https://www.home-assistant.io/integrations/api) to know how to enable it.
 
