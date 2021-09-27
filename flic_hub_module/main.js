@@ -61,6 +61,16 @@ function getButtonName(data) {
 	return 'flic_' + data.bdaddr.replace(new RegExp(':', 'g'), '');
 }
 
+function getBatteryIcon(battery_level) {
+	if(battery_level >= 99) {
+		return 'mdi:battery';
+	} else if(battery_level < 99 && battery_level > CONFIG.WARNING_BATTERY_LEVEL) {
+		return 'mdi:battery-' + (battery_level / 10) + "0";
+	} else if(battery_level <= CONFIG.WARNING_BATTERY_LEVEL) {
+		return 'mdi:battery-alert-variant-outline';
+	}
+}
+
 function sendButtonState(button, state) {
 	var data = JSON.parse(JSON.stringify(button));
 	notifyHomeAssistant({
@@ -71,6 +81,19 @@ function sendButtonState(button, state) {
 			'attributes': {
 				'batteryStatus': data.batteryStatus,
 				'friendly_name': data.name == null ? getButtonName(data) : data.name
+			}
+		})
+	});
+	notifyHomeAssistant({
+		'method': "POST",
+		'url': CONFIG.SERVER_HOST + "/api/states/sensor." + getButtonName(data) + "_battery",
+		'content': JSON.stringify({
+			'state': data.batteryStatus,
+			'attributes': {
+				'device_class': 'battery',
+				'unit_of_measurement': '%',
+				'icon': getBatteryIcon(data.batteryStatus),
+				'friendly_name': (data.name == null ? getButtonName(data) : data.name) + " Battery"
 			}
 		})
 	});
