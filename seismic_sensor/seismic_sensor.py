@@ -59,7 +59,7 @@ def check_sasmex() :
 	rows = soup.find_all("tr")
 	for row in rows :
 		try :
-			if len(row.contents) < 6 :
+			if len(row.contents) < 10 :
 				continue
 			columns = row.contents
 			magnitude = float(columns[9].text.strip())
