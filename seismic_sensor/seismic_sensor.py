@@ -46,10 +46,11 @@ def check_ssn() :
 			continue
 
 def check_sasmex() :
+	today = datetime.today()
 	url = "http://www.cires.org.mx/sasmex_historico_buscador_resultado_es_n.php"
 	payload = {
-		'anio': '2021',
-		'mes': '09',
+		'anio': str(today.strftime("%Y")),
+		'mes': str(today.strftime("%m")),
 		'tipoaviso': '03',
 		'ciudad': '01'
 	}
