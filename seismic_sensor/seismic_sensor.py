@@ -32,7 +32,8 @@ def isValidData(date, magnitude) :
 	return (magnitude >= arguments.min_magnitude) and (date.astimezone(arguments.last_earthquake_datetime.tzinfo).timestamp() >= arguments.last_earthquake_datetime.timestamp())
 
 def check_ssn() :
-	feed = feedparser.parse('http://www.ssn.unam.mx/rss/ultimos-sismos.xml')
+	page = requests.request("GET", "http://www.ssn.unam.mx/rss/ultimos-sismos.xml", timeout=10)
+	feed = feedparser.parse(page.content)
 	for entry in feed['entries'] :
 		try :
 			link = entry['link']
@@ -47,14 +48,13 @@ def check_ssn() :
 
 def check_sasmex() :
 	today = datetime.today()
-	url = "http://www.cires.org.mx/sasmex_historico_buscador_resultado_es_n.php"
 	payload = {
 		'anio': str(today.strftime("%Y")),
 		'mes': str(today.strftime("%m")),
 		'tipoaviso': '03',
 		'ciudad': '01'
 	}
-	page = requests.request("POST", url, data=payload)
+	page = requests.request("POST", "http://www.cires.org.mx/sasmex_historico_buscador_resultado_es_n.php", data=payload, timeout=10)
 	soup = BeautifulSoup(page.content, "html.parser")
 	rows = soup.find_all("tr")
 	for row in rows :
