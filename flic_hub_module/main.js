@@ -2,10 +2,9 @@ const CONFIG = require("./config");
 const requestManager = require("http");
 const buttonManager = require("buttons");
 
-// STATES
-const STATE_ON = 'on';
-const STATE_OFF = 'off';
-const STATE_UNKNOWN = 'unknown';
+// BUTTON_STATES
+const BUTTON_STATE_ON = 'on';
+const BUTTON_STATE_OFF = 'off';
 
 // ACTIONS
 const CLICK_HOLD = 'hold';
@@ -17,8 +16,7 @@ const CLICK_DOUBLE = 'double';
 function syncButtons() {
 	var buttons = buttonManager.getButtons();
 	for (var i = 0; i < buttons.length; i++) {
-		const button = buttons[i];
-		sendButtonState(button, button.ready ? STATE_ON : STATE_OFF);
+		sendButtonSensorsStates(buttons[i]);
 	}
 }
 
@@ -27,19 +25,12 @@ setInterval(syncButtons, CONFIG.SYNC_TIME);
 
 //--------------------------------------------------------------------------------//
 
-buttonManager.on("buttonReady", function(obj) {
-	var button = buttonManager.getButton(obj.bdaddr);
-	sendButtonState(button, STATE_ON);
+buttonManager.on("buttonDown", function(obj) {
+	sendButtonState(buttonManager.getButton(obj.bdaddr), BUTTON_STATE_ON);
 });
 
-buttonManager.on("buttonDisconnected", function(obj) {
-	var button = buttonManager.getButton(obj.bdaddr);
-	sendButtonState(button, STATE_OFF);
-});
-
-buttonManager.on("buttonDeleted", function(obj) {
-	var button = buttonManager.getButton(obj.bdaddr);
-	sendButtonState(button, STATE_UNKNOWN);
+buttonManager.on("buttonUp", function(obj) {
+	sendButtonState(buttonManager.getButton(obj.bdaddr), BUTTON_STATE_OFF);
 });
 
 var lasClickTimestamp = 0;
@@ -61,6 +52,14 @@ function getButtonName(data) {
 	return 'flic_' + data.bdaddr.replace(new RegExp(':', 'g'), '');
 }
 
+function getButtonFriendlyName(data, suffix) {
+	var friendly_name = (data.name == null ? getButtonName(data) : data.name);
+	if (typeof suffix != 'undefined') {
+		friendly_name = friendly_name  + " " + suffix;
+	}
+	return friendly_name;
+}
+
 function getBatteryIcon(battery_level) {
 	if(battery_level >= 99) {
 		return 'mdi:battery';
@@ -71,19 +70,12 @@ function getBatteryIcon(battery_level) {
 	}
 }
 
-function sendButtonState(button, state) {
+function sendButtonSensorsStates(button) {
+	sendButtonBatteryState(button);
+}
+
+function sendButtonBatteryState(button) {
 	var data = JSON.parse(JSON.stringify(button));
-	notifyHomeAssistant({
-		'method': "POST",
-		'url': CONFIG.SERVER_HOST + "/api/states/binary_sensor." + getButtonName(data),
-		'content': JSON.stringify({
-			'state': state,
-			'attributes': {
-				'batteryStatus': data.batteryStatus,
-				'friendly_name': data.name == null ? getButtonName(data) : data.name
-			}
-		})
-	});
 	notifyHomeAssistant({
 		'method': "POST",
 		'url': CONFIG.SERVER_HOST + "/api/states/sensor." + getButtonName(data) + "_battery",
@@ -93,7 +85,21 @@ function sendButtonState(button, state) {
 				'device_class': 'battery',
 				'unit_of_measurement': '%',
 				'icon': getBatteryIcon(data.batteryStatus),
-				'friendly_name': (data.name == null ? getButtonName(data) : data.name) + " Battery"
+				'friendly_name': getButtonFriendlyName(data, "Battery")
+			}
+		})
+	});
+}
+
+function sendButtonState(button, state) {
+	var data = JSON.parse(JSON.stringify(button));
+	notifyHomeAssistant({
+		'method': "POST",
+		'url': CONFIG.SERVER_HOST + "/api/states/binary_sensor." + getButtonName(data),
+		'content': JSON.stringify({
+			'state': state,
+			'attributes': {
+				'friendly_name': getButtonFriendlyName(data)
 			}
 		})
 	});
