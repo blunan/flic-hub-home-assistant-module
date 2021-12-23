@@ -153,12 +153,12 @@ function notifyHomeAssistant(options) {
 		'Content-Type': 'application/json'
 	};
 	requestManager.makeRequest(options, function (error, result) {
+		console.log("---------------------");
+		console.log("Request: " + JSON.stringify(options) + "\n");
 		if(error != null)  {
-			console.log(JSON.stringify(options));
-			console.log(JSON.stringify(error));
-		} else if(result.statusCode >= 300) {
-			console.log(JSON.stringify(options));
-			console.log(JSON.stringify(result));
+			console.log("Error: " + JSON.stringify(error));
+		} else {
+			console.log("Response: " + JSON.stringify(result));
 		}
 	});
 }
