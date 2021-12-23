@@ -24,6 +24,14 @@ function syncButtons() {
 	}
 }
 
+function initStates() {
+	var buttons = buttonManager.getButtons();
+	for (var i = 0; i < buttons.length; i++) {
+		sendButtonState(buttons[i], BUTTON_STATE_OFF);
+	}
+}
+
+initStates()
 syncButtons()
 setInterval(syncButtons, CONFIG.SYNC_TIME);
 
