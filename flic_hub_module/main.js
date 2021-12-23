@@ -2,6 +2,10 @@ const CONFIG = require("./config");
 const requestManager = require("http");
 const buttonManager = require("buttons");
 
+// CONNECTIVITY_STATES
+const CONNECTIVITY_STATE_CONNECTED = 'on';
+const CONNECTIVITY_STATE_DISCONNECTED = 'off';
+
 // BUTTON_STATES
 const BUTTON_STATE_ON = 'on';
 const BUTTON_STATE_OFF = 'off';
@@ -24,6 +28,14 @@ syncButtons()
 setInterval(syncButtons, CONFIG.SYNC_TIME);
 
 //--------------------------------------------------------------------------------//
+
+buttonManager.on("buttonReady", function(obj) {
+	sendButtonConnectivityState(buttonManager.getButton(obj.bdaddr));
+});
+
+buttonManager.on("buttonDisconnected", function(obj) {
+	sendButtonConnectivityState(buttonManager.getButton(obj.bdaddr));
+});
 
 buttonManager.on("buttonDown", function(obj) {
 	sendButtonState(buttonManager.getButton(obj.bdaddr), BUTTON_STATE_ON);
@@ -72,6 +84,7 @@ function getBatteryIcon(battery_level) {
 
 function sendButtonSensorsStates(button) {
 	sendButtonBatteryState(button);
+	sendButtonConnectivityState(button);
 }
 
 function sendButtonBatteryState(button) {
@@ -86,6 +99,22 @@ function sendButtonBatteryState(button) {
 				'unit_of_measurement': '%',
 				'icon': getBatteryIcon(data.batteryStatus),
 				'friendly_name': getButtonFriendlyName(data, "Battery")
+			}
+		})
+	});
+}
+
+function sendButtonConnectivityState(button) {
+	var data = JSON.parse(JSON.stringify(button));
+	notifyHomeAssistant({
+		'method': "POST",
+		'url': CONFIG.SERVER_HOST + "/api/states/binary_sensor." + getButtonName(data) + "_connectivity",
+		'content': JSON.stringify({
+			'state': data.ready ? CONNECTIVITY_STATE_CONNECTED : CONNECTIVITY_STATE_DISCONNECTED,
+			'attributes': {
+				'device_class': 'connectivity',
+				'icon': data.ready ? 'mdi:bluetooth' : 'mdi:bluetooth-off',
+				'friendly_name': getButtonFriendlyName(data, "Connectivity")
 			}
 		})
 	});
