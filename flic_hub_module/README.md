@@ -33,7 +33,7 @@ automation:
       platform: event
       event_type: flic_click
       event_data:
-        button_name: flic_81e4ac74b6d2
+        button_name: flic_80e4da779fc7
         click_type: single
     action:
       service: homeassistant.turn_on
@@ -42,3 +42,18 @@ automation:
 ```
 
 Where the possible values for **click_type** are: `single`, `double` and `hold`.
+
+## Flic button card
+
+It is possible to add a card to your dashboard to check **state**, **battery** and **connectivity** status for your flics
+
+![Flic Button Card](../res/FlicButtonCard.png?raw=true "Flic Button Card")
+
+```yaml
+type: entities
+title: Flic gamer
+entities:
+  - entity: binary_sensor.flic_80e4da779fc7
+  - entity: sensor.flic_80e4da779fc7_battery
+  - entity: binary_sensor.flic_80e4da779fc7_connectivity
+```
