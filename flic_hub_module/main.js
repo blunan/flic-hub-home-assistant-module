@@ -45,6 +45,10 @@ buttonManager.on("buttonDisconnected", function(obj) {
 	sendButtonConnectivityState(buttonManager.getButton(obj.bdaddr));
 });
 
+buttonManager.on("buttonDeleted", function(button) {
+	sendRemovedState(button);
+});
+
 buttonManager.on("buttonDown", function(obj) {
 	sendButtonState(buttonManager.getButton(obj.bdaddr), BUTTON_STATE_ON);
 });
@@ -152,6 +156,22 @@ function sendButtonEvent(event) {
 			'button_address': data.bdaddr,
 			'click_type': data.clickType
 		})
+	});
+}
+
+function sendRemovedState(button) {
+	var data = JSON.parse(JSON.stringify(button));
+	notifyHomeAssistant({
+		'method': "DELETE",
+		'url': CONFIG.SERVER_HOST + "/api/states/binary_sensor." + getButtonName(data)
+	});
+	notifyHomeAssistant({
+		'method': "DELETE",
+		'url': CONFIG.SERVER_HOST + "/api/states/sensor." + getButtonName(data) + "_battery"
+	});
+	notifyHomeAssistant({
+		'method': "DELETE",
+		'url': CONFIG.SERVER_HOST + "/api/states/binary_sensor." + getButtonName(data) + "_connectivity",
 	});
 }
 
