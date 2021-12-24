@@ -1,25 +1,25 @@
 const CFG = require("./config");
 
-function getButtonName(data) {
-	return 'flic_' + data.bdaddr.replace(new RegExp(':', 'g'), '');
+function getButtonName(button) {
+	return 'flic_' + button.bdaddr.replace(new RegExp(':', 'g'), '');
 }
 
 exports.getButtonName = getButtonName;
 
-exports.getButtonFriendlyName = function(data, suffix) {
-	var friendly_name = (data.name == null ? getButtonName(data) : data.name);
+exports.getButtonFriendlyName = function(button, suffix) {
+	var friendlyName = button.name == null ? getButtonName(button) : button.name;
 	if (typeof suffix != 'undefined') {
-		friendly_name = friendly_name  + " " + suffix;
+		friendlyName = friendlyName + " " + suffix;
 	}
-	return friendly_name;
+	return friendlyName;
 }
 
-exports.getBatteryIcon = function(battery_level) {
-	if(battery_level >= 99) {
+exports.getBatteryIcon = function(batteryLevel) {
+	if(batteryLevel >= 99) {
 		return 'mdi:battery';
-	} else if(battery_level < 99 && battery_level > CFG.WARNING_BATTERY_LEVEL) {
-		return 'mdi:battery-' + (battery_level / 10) + "0";
-	} else if(battery_level <= CFG.WARNING_BATTERY_LEVEL) {
+	} else if(batteryLevel < 99 && batteryLevel > CFG.WARNING_BATTERY_LEVEL) {
+		return 'mdi:battery-' + (batteryLevel / 10) + "0";
+	} else if(batteryLevel <= CFG.WARNING_BATTERY_LEVEL) {
 		return 'mdi:battery-alert-variant-outline';
 	}
 }
