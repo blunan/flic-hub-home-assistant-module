@@ -1,8 +1,10 @@
 const CFG = require("./config");
 
-exports.getButtonName = function(data) {
+function getButtonName(data) {
 	return 'flic_' + data.bdaddr.replace(new RegExp(':', 'g'), '');
 }
+
+exports.getButtonName = getButtonName;
 
 exports.getButtonFriendlyName = function(data, suffix) {
 	var friendly_name = (data.name == null ? getButtonName(data) : data.name);
