@@ -1,5 +1,6 @@
-const CONFIG = require("./config");
-const requestManager = require("http");
+const ha = require("./ha");
+const CFG = require("./config");
+const C = require("./constants");
 const buttonManager = require("buttons");
 
 //--------------------------------------------------------------------------------//
@@ -7,60 +8,53 @@ const buttonManager = require("buttons");
 function syncButtons() {
 	var buttons = buttonManager.getButtons();
 	for (var i = 0; i < buttons.length; i++) {
-		sendButtonSensorsStates(buttons[i]);
+		ha.sendButtonBatteryState(buttons[i]);
+		ha.sendButtonConnectivityState(buttons[i]);
 	}
 }
 
 function initStates() {
 	var buttons = buttonManager.getButtons();
 	for (var i = 0; i < buttons.length; i++) {
-		sendButtonState(buttons[i], BUTTON_STATE_OFF);
+		ha.sendButtonState(buttons[i], C.BUTTON_STATE_OFF);
 	}
 }
 
 initStates()
 syncButtons()
-setInterval(syncButtons, CONFIG.SYNC_TIME);
+setInterval(syncButtons, CFG.SYNC_TIME);
 
 //--------------------------------------------------------------------------------//
 
 buttonManager.on("buttonReady", function(obj) {
-	sendButtonConnectivityState(buttonManager.getButton(obj.bdaddr));
+	ha.sendButtonConnectivityState(buttonManager.getButton(obj.bdaddr));
 });
 
 buttonManager.on("buttonDisconnected", function(obj) {
-	sendButtonConnectivityState(buttonManager.getButton(obj.bdaddr));
+	ha.sendButtonConnectivityState(buttonManager.getButton(obj.bdaddr));
 });
 
 buttonManager.on("buttonDeleted", function(button) {
-	sendRemovedState(button);
+	ha.sendRemovedState(button);
 });
 
 buttonManager.on("buttonDown", function(obj) {
-	sendButtonState(buttonManager.getButton(obj.bdaddr), BUTTON_STATE_ON);
+	ha.sendButtonState(buttonManager.getButton(obj.bdaddr), C.BUTTON_STATE_ON);
 });
 
 buttonManager.on("buttonUp", function(obj) {
-	sendButtonState(buttonManager.getButton(obj.bdaddr), BUTTON_STATE_OFF);
+	ha.sendButtonState(buttonManager.getButton(obj.bdaddr), C.BUTTON_STATE_OFF);
 });
 
 var lasClickTimestamp = 0;
 buttonManager.on("buttonSingleOrDoubleClickOrHold", function(obj) {
 	const timestamp = Date.now();
 	var button = buttonManager.getButton(obj.bdaddr);
-	if(timestamp - lasClickTimestamp >= CONFIG.MIN_EVENTS_OFFSET) {
+	if(timestamp - lasClickTimestamp >= CFG.MIN_EVENTS_OFFSET) {
 		lasClickTimestamp = timestamp;
-		button.clickType = obj.isSingleClick ? CLICK_SINGLE : obj.isDoubleClick ? CLICK_DOUBLE : CLICK_HOLD;
-		sendButtonEvent(button);
+		button.clickType = obj.isSingleClick ? C.CLICK_SINGLE : obj.isDoubleClick ? C.CLICK_DOUBLE : C.CLICK_HOLD;
+		ha.sendButtonEvent(button);
 	} else {
 		console.log("Event was ignored");
 	}
-});
-
-//--------------------------------------------------------------------------------//
-
-function sendButtonSensorsStates(button) {
-	sendButtonBatteryState(button);
-	sendButtonConnectivityState(button);
-}
 });
