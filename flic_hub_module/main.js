@@ -2,19 +2,6 @@ const CONFIG = require("./config");
 const requestManager = require("http");
 const buttonManager = require("buttons");
 
-// CONNECTIVITY_STATES
-const CONNECTIVITY_STATE_CONNECTED = 'on';
-const CONNECTIVITY_STATE_DISCONNECTED = 'off';
-
-// BUTTON_STATES
-const BUTTON_STATE_ON = 'on';
-const BUTTON_STATE_OFF = 'off';
-
-// ACTIONS
-const CLICK_HOLD = 'hold';
-const CLICK_SINGLE = 'single';
-const CLICK_DOUBLE = 'double';
-
 //--------------------------------------------------------------------------------//
 
 function syncButtons() {
