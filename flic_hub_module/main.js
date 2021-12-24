@@ -59,28 +59,6 @@ buttonManager.on("buttonSingleOrDoubleClickOrHold", function(obj) {
 
 //--------------------------------------------------------------------------------//
 
-function getButtonName(data) {
-	return 'flic_' + data.bdaddr.replace(new RegExp(':', 'g'), '');
-}
-
-function getButtonFriendlyName(data, suffix) {
-	var friendly_name = (data.name == null ? getButtonName(data) : data.name);
-	if (typeof suffix != 'undefined') {
-		friendly_name = friendly_name  + " " + suffix;
-	}
-	return friendly_name;
-}
-
-function getBatteryIcon(battery_level) {
-	if(battery_level >= 99) {
-		return 'mdi:battery';
-	} else if(battery_level < 99 && battery_level > CONFIG.WARNING_BATTERY_LEVEL) {
-		return 'mdi:battery-' + (battery_level / 10) + "0";
-	} else if(battery_level <= CONFIG.WARNING_BATTERY_LEVEL) {
-		return 'mdi:battery-alert-variant-outline';
-	}
-}
-
 function sendButtonSensorsStates(button) {
 	sendButtonBatteryState(button);
 	sendButtonConnectivityState(button);
