@@ -6,7 +6,7 @@ exports.CONNECTIVITY_STATE_DISCONNECTED = 'off';
 exports.BUTTON_STATE_ON = 'on';
 exports.BUTTON_STATE_OFF = 'off';
 
-// ACTIONS
+// BUTTON_ACTIONS
 exports.CLICK_HOLD = 'hold';
 exports.CLICK_SINGLE = 'single';
 exports.CLICK_DOUBLE = 'double';
