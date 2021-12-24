@@ -3,7 +3,21 @@ const CFG = require("./config");
 const C = require("./constants");
 const buttonManager = require("buttons");
 
-//--------------------------------------------------------------------------------//
+initButtons()
+setInterval(syncButtons, CFG.SYNC_TIME);
+
+function initButtons() {
+	var buttons = buttonManager.getButtons();
+	for (var i = 0; i < buttons.length; i++) {
+		initButton(buttons[i]);
+	}
+}
+
+function initButton(button) {
+	ha.sendButtonState(button, C.BUTTON_STATE_OFF);
+	ha.sendButtonBatteryState(button);
+	ha.sendButtonConnectivityState(button);
+}
 
 function syncButtons() {
 	var buttons = buttonManager.getButtons();
@@ -13,18 +27,13 @@ function syncButtons() {
 	}
 }
 
-function initStates() {
-	var buttons = buttonManager.getButtons();
-	for (var i = 0; i < buttons.length; i++) {
-		ha.sendButtonState(buttons[i], C.BUTTON_STATE_OFF);
-	}
-}
+buttonManager.on("buttonConnected", function(obj) {
+	initButton(buttonManager.getButton(obj.bdaddr));
+});
 
-initStates()
-syncButtons()
-setInterval(syncButtons, CFG.SYNC_TIME);
-
-//--------------------------------------------------------------------------------//
+buttonManager.on("buttonDeleted", function(obj) {
+	ha.sendRemovedState(obj);
+});
 
 buttonManager.on("buttonReady", function(obj) {
 	ha.sendButtonConnectivityState(buttonManager.getButton(obj.bdaddr));
@@ -32,10 +41,6 @@ buttonManager.on("buttonReady", function(obj) {
 
 buttonManager.on("buttonDisconnected", function(obj) {
 	ha.sendButtonConnectivityState(buttonManager.getButton(obj.bdaddr));
-});
-
-buttonManager.on("buttonDeleted", function(button) {
-	ha.sendRemovedState(button);
 });
 
 buttonManager.on("buttonDown", function(obj) {
