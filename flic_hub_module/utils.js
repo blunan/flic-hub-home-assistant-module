@@ -6,13 +6,15 @@ function getButtonName(button) {
 
 exports.getButtonName = getButtonName;
 
-exports.getButtonFriendlyName = function(button, suffix) {
+function getButtonFriendlyName(button, suffix) {
 	var friendlyName = button.name == null ? getButtonName(button) : button.name;
 	if (typeof suffix != 'undefined') {
 		friendlyName = friendlyName + " " + suffix;
 	}
 	return friendlyName;
 }
+
+exports.getButtonFriendlyName = getButtonFriendlyName;
 
 exports.getBatteryIcon = function(batteryLevel) {
 	if(batteryLevel >= 99) {
@@ -26,4 +28,30 @@ exports.getBatteryIcon = function(batteryLevel) {
 
 exports.getConnectivityIcon = function(ready) {
 	return ready ? 'mdi:bluetooth' : 'mdi:bluetooth-off';
+}
+
+var buttonEventTimestamps = {};
+
+exports.initButtonEventTimestamp = function(button) {
+	setButtonEventTimestamp(button, Date.now() - CFG.MIN_EVENTS_OFFSET);
+}
+
+function setButtonEventTimestamp(button, timestamp) {
+	buttonEventTimestamps[getButtonName(button)] = timestamp;
+}
+
+exports.setButtonEventTimestamp = setButtonEventTimestamp;
+
+exports.getButtonEventTimestamp = function(button) {
+	const buttonName = getButtonName(button);
+	if (buttonEventTimestamps.hasOwnProperty(buttonName))
+		return buttonEventTimestamps[buttonName];
+	return 0;
+}
+
+exports.deleteButtonEventTimestamp = function(button) {
+	const buttonName = getButtonName(button);
+	if (buttonEventTimestamps.hasOwnProperty(buttonName))
+		return delete buttonEventTimestamps[buttonName];
+	return false;
 }

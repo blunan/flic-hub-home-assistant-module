@@ -1,6 +1,7 @@
 const ha = require("./ha");
 const CFG = require("./config");
 const C = require("./constants");
+const utils = require("./utils");
 const buttonManager = require("buttons");
 
 initButtons()
@@ -14,6 +15,7 @@ function initButtons() {
 }
 
 function initButton(button) {
+	utils.initButtonEventTimestamp(button);
 	ha.sendButtonState(button, C.BUTTON_STATE_OFF);
 	ha.sendButtonBatteryState(button);
 	ha.sendButtonConnectivityState(button);
@@ -27,12 +29,17 @@ function syncButtons() {
 	}
 }
 
+function deleteButton(button) {
+	utils.deleteButtonEventTimestamp(button);
+	ha.sendRemovedState(button);
+}
+
 buttonManager.on("buttonConnected", function(obj) {
 	initButton(buttonManager.getButton(obj.bdaddr));
 });
 
 buttonManager.on("buttonDeleted", function(obj) {
-	ha.sendRemovedState(obj);
+	deleteButton(obj);
 });
 
 buttonManager.on("buttonReady", function(obj) {
@@ -51,15 +58,15 @@ buttonManager.on("buttonUp", function(obj) {
 	ha.sendButtonState(buttonManager.getButton(obj.bdaddr), C.BUTTON_STATE_OFF);
 });
 
-var lasClickTimestamp = 0;
 buttonManager.on("buttonSingleOrDoubleClickOrHold", function(obj) {
 	const timestamp = Date.now();
 	var button = buttonManager.getButton(obj.bdaddr);
-	if(timestamp - lasClickTimestamp >= CFG.MIN_EVENTS_OFFSET) {
-		lasClickTimestamp = timestamp;
+	if(timestamp - utils.getButtonEventTimestamp(button) >= CFG.MIN_EVENTS_OFFSET) {
+		utils.setButtonEventTimestamp(button, timestamp);
 		button.clickType = obj.isSingleClick ? C.CLICK_SINGLE : obj.isDoubleClick ? C.CLICK_DOUBLE : C.CLICK_HOLD;
 		ha.sendButtonEvent(button);
 	} else {
-		console.log("Event was ignored");
+		console.log("------------------------------------------");
+		console.log(timestamp +  ": Warning: Event for " + utils.getButtonFriendlyName(button) + " was ignored, last button's event was at: " + utils.getButtonEventTimestamp(button));
 	}
 });
