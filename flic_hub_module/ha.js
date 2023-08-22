@@ -19,15 +19,16 @@ exports.sendButtonState = function(obj, state) {
 
 exports.sendButtonBatteryState = function(obj) {
 	var button = JSON.parse(JSON.stringify(obj));
+	var battery = button.batteryStatus == null ? 0 : button.batteryStatus;
 	notifyHomeAssistant({
 		'method': "POST",
 		'url': CFG.SERVER_HOST + "/api/states/sensor." + utils.getButtonName(button) + "_battery",
 		'content': JSON.stringify({
-			'state': button.batteryStatus,
+			'state': battery,
 			'attributes': {
 				'device_class': 'battery',
 				'unit_of_measurement': '%',
-				'icon': utils.getBatteryIcon(button.batteryStatus),
+				'icon': utils.getBatteryIcon(battery),
 				'friendly_name': utils.getButtonFriendlyName(button, "Battery")
 			}
 		})
