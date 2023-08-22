@@ -16,7 +16,7 @@ First you need to create a module on your Flic Hub using their [Online IDE](http
 
 It should look something like this:
 
-![Flic Hub Online IDE](../res/FlicHubOnlineIDE.png?raw=true "Flic Hub Online IDE")
+![Flic Hub Online IDE](./res/FlicHubOnlineIDE.png?raw=true "Flic Hub Online IDE")
 
 Then edit the `config.js` file so the Flic Hub can connect to your Home Assistant REST API.
 
@@ -55,7 +55,7 @@ Where the possible values for **click_type** are: `single`, `double` and `hold`.
 
 It is possible to add a card to your dashboard to check **state**, **battery** and **connectivity** status for your flics
 
-![Flic Button Card](../res/FlicButtonCard.png?raw=true "Flic Button Card")
+![Flic Button Card](./res/FlicButtonCard.png?raw=true "Flic Button Card")
 
 ```yaml
 type: entities
