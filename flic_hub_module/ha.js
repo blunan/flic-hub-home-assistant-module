@@ -86,6 +86,12 @@ function notifyHomeAssistant(options) {
 		'Authorization': 'Bearer ' + CFG.SERVER_AUTH_TOKEN,
 		'Content-Type': 'application/json'
 	};
+	if(CFG.USE_CUSTOM_TLS) {
+		options.customTrustStore = {
+			'certList': CFG.CUSTOM_CERTS,
+			'validateHostname': CFG.VERIFY_TLS
+		}
+	}
 	http.makeRequest(options, function (error, result) {
 		console.log("------------------------------------------");
 		console.log("Request: " + JSON.stringify(options) + "\n");
