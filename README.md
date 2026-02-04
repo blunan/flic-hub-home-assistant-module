@@ -31,7 +31,7 @@ Then edit the `config.js` file so the Flic Hub can connect to your Home Assistan
 | `VERIFY_CERTIFICATE`     | Boolean | If a custom certificate is used, whether to validate the hostname in the URL against the Subject Alternative Name extension in the server's certificate. |
 | `CUSTOM_CERTIFICATES`    | String  | (From [Flic Hub Documentation](https://hubsdk.flic.io/static/documentation/#43_makerequest)) One or more certificates to trust in PEM format. Can be both end entity certificates or CA certificates. If multiple certificates, concatenate them. Extraneous whitespace is allowed. |
 
-> Be sure you have the **API** component enabled in your Home Asistant instance (enabled by default). In case you have any troubles see their [documentation](https://www.home-assistant.io/integrations/api) to know how to enable it.
+> Be sure you have the **API** component enabled in your Home Assistant instance (enabled by default). In case you have any troubles see their [documentation](https://www.home-assistant.io/integrations/api) to know how to enable it.
 
 ## Run automations with your Flics
 
@@ -49,7 +49,7 @@ automation:
     action:
       service: homeassistant.turn_on
       target:
-        entity_id: group.lights_livingroom
+        entity_id: group.lights_living_room
 ```
 
 Where the possible values for **click_type** are: `single`, `double` and `hold`.
