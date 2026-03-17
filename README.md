@@ -54,6 +54,8 @@ automation:
 
 Where the possible values for **click_type** are: `single`, `double` and `hold`.
 
+Alternatively import and use the [blueprint](flic-button.yaml).
+
 ## Flic button card
 
 It is possible to add a card to your dashboard to check **state**, **battery** and **connectivity** status for your flics:
