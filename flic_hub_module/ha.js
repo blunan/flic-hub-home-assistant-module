@@ -86,10 +86,10 @@ function notifyHomeAssistant(options) {
 		'Authorization': 'Bearer ' + CFG.SERVER_AUTH_TOKEN,
 		'Content-Type': 'application/json'
 	};
-	if(CFG.USE_CUSTOM_TLS) {
+	if(CFG.USE_CUSTOM_CERTIFICATE) {
 		options.customTrustStore = {
-			'certList': CFG.CUSTOM_CERTS,
-			'validateHostname': CFG.VERIFY_TLS
+			'certList': CFG.CUSTOM_CERTIFICATES,
+			'validateHostname': CFG.VERIFY_CERTIFICATE
 		}
 	}
 	http.makeRequest(options, function (error, result) {
