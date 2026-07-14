@@ -12,3 +12,7 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 *.swp
+
+# Dev Container Features
+## As for now they are not project dependencies just dev tooling
+.devcontainer/devcontainer-lock.json

@@ -1,0 +1,20 @@
+{
+	"name": "flic-hub-home-assistant-module",
+	"version": "1.2.6",
+	"description": "Flic Hub Module for Home Assistant",
+	"private": true,
+	"author": "Brayan Luna <blun4n@gmail.com> (https://www.blunan.com)",
+	"license": "MIT",
+	"scripts": {
+		"test": "jest"
+	},
+	"devDependencies": {
+		"jest": "^30"
+	},
+	"jest": {
+		"testEnvironment": "node",
+		"moduleNameMapper": {
+			"^buttons$": "<rootDir>/test/mocks/buttons.js"
+		}
+	}
+}
