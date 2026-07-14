@@ -13,3 +13,6 @@ exports.BATTERY_STATE_UNKNOWN = 'unknown';
 // CONNECTIVITY_STATES
 exports.CONNECTIVITY_STATE_CONNECTED = 'on';
 exports.CONNECTIVITY_STATE_DISCONNECTED = 'off';
+
+// UTILS
+exports.COLON_REGEX = new RegExp(':', 'g');
