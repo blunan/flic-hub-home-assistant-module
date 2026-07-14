@@ -1,7 +1,8 @@
 const CFG = require("./config");
+const C = require("./constants");
 
 function getButtonName(button) {
-	return 'flic_' + button.bdaddr.replace(new RegExp(':', 'g'), '');
+	return 'flic_' + button.bdaddr.replace(C.COLON_REGEX, '');
 }
 
 exports.getButtonName = getButtonName;
