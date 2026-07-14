@@ -17,13 +17,16 @@ function getButtonFriendlyName(button, suffix) {
 exports.getButtonFriendlyName = getButtonFriendlyName;
 
 exports.getBatteryIcon = function(batteryLevel) {
-	if(batteryLevel >= 95) {
-		return 'mdi:battery';
-	} else if(batteryLevel < 95 && batteryLevel > CFG.WARNING_BATTERY_LEVEL) {
-		return 'mdi:battery-' + parseInt(batteryLevel / 10) * 10;
+	if(typeof batteryLevel != 'number' || isNaN(batteryLevel)) {
+		return 'mdi:battery-unknown';
+	} else if(batteryLevel < 5) {
+		return 'mdi:battery-outline';
 	} else if(batteryLevel <= CFG.WARNING_BATTERY_LEVEL) {
 		return 'mdi:battery-alert';
+	} else if(batteryLevel >= 95) {
+		return 'mdi:battery';
 	}
+	return 'mdi:battery-' + Math.round(batteryLevel / 10) * 10;
 }
 
 exports.getConnectivityIcon = function(ready) {
