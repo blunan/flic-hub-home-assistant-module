@@ -24,7 +24,7 @@ Then edit the `config.js` file so the Flic Hub can connect to your Home Assistan
 | :----------------------- | :-----: | :---------- |
 | `MIN_EVENTS_OFFSET`      | Integer | When the time elapsed between two events is less than `MIN_EVENTS_OFFSET` milliseconds, the most recent event will be ignored. Events like `double` and `hold` sometimes trigger a `single` event when you release the button |
 | `SYNC_TIME`              | Integer | Defines how often (in milliseconds) the state for all the buttons will be reported to Home Assistant. |
-| `WARNING_BATTERY_LEVEL`  | Integer | If battery level is below this value (in percentage), a battery warning icon will be shown. |
+| `WARNING_BATTERY_LEVEL`  | Integer | If battery level is at or below this value (in percentage), and at or above 5, a battery warning icon (`mdi:battery-alert`) will be shown. Below 5% the empty battery icon (`mdi:battery-outline`) is shown instead, so setting this below 5 disables the warning. A button that has not reported a battery level yet is unaffected by this setting: its sensor reports `unknown` with `mdi:battery-unknown`. |
 | `SERVER_HOST`            | String  | The URL where your Home Assistant instance is running. Example: `https://192.168.XXX.YYY:8123`. |
 | `SERVER_AUTH_TOKEN`      | String  | A **Long-Lived Access Token** obtained from [your profile](https://www.home-assistant.io/docs/authentication/#your-account-profile) `https://192.168.XXX.YYY:8123/profile`. |
 | `USE_CUSTOM_CERTIFICATE` | Boolean | Enables the use of a custom certificate for HTTPS, ideal for self signed certificates. |

@@ -16,3 +16,4 @@ exports.CONNECTIVITY_STATE_DISCONNECTED = 'off';
 
 // UTILS
 exports.COLON_REGEX = new RegExp(':', 'g');
+exports.EMPTY_STATE = Object.freeze({'timestamp': 0, 'emitted': false});

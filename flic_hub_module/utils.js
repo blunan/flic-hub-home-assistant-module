@@ -34,28 +34,47 @@ exports.getConnectivityIcon = function(ready) {
 	return ready ? 'mdi:bluetooth' : 'mdi:bluetooth-off';
 }
 
-const buttonEventTimestamps = {};
+const buttonEventStates = {};
 
-exports.initButtonEventTimestamp = function(button) {
-	setButtonEventTimestamp(button, Date.now() - CFG.MIN_EVENTS_OFFSET);
+function initButtonEventState(button) {
+	buttonEventStates[button.bdaddr] = {
+		'timestamp': Date.now() - CFG.MIN_EVENTS_OFFSET,
+		'emitted': false
+	};
+}
+
+exports.initButtonEventState = initButtonEventState;
+
+function getOrCreateButtonEventState(button) {
+	if (!buttonEventStates.hasOwnProperty(button.bdaddr)) {
+		buttonEventStates[button.bdaddr] = {... C.EMPTY_STATE};
+	}
+	return buttonEventStates[button.bdaddr];
 }
 
 function setButtonEventTimestamp(button, timestamp) {
-	buttonEventTimestamps[getButtonName(button)] = timestamp;
+	getOrCreateButtonEventState(button).timestamp = timestamp;
 }
 
 exports.setButtonEventTimestamp = setButtonEventTimestamp;
 
 exports.getButtonEventTimestamp = function(button) {
-	const buttonName = getButtonName(button);
-	if (buttonEventTimestamps.hasOwnProperty(buttonName))
-		return buttonEventTimestamps[buttonName];
-	return 0;
+	return (buttonEventStates[button.bdaddr] || C.EMPTY_STATE).timestamp;
 }
 
-exports.deleteButtonEventTimestamp = function(button) {
-	const buttonName = getButtonName(button);
-	if (buttonEventTimestamps.hasOwnProperty(buttonName))
-		return delete buttonEventTimestamps[buttonName];
+function setButtonEventEmitted(button, emitted) {
+	getOrCreateButtonEventState(button).emitted = emitted;
+}
+
+exports.setButtonEventEmitted = setButtonEventEmitted;
+
+exports.getButtonEventEmitted = function(button) {
+	return (buttonEventStates[button.bdaddr] || C.EMPTY_STATE).emitted;
+}
+
+exports.deleteButtonEventState = function(button) {
+	if (buttonEventStates.hasOwnProperty(button.bdaddr)) {
+		return delete buttonEventStates[button.bdaddr];
+	}
 	return false;
 }
