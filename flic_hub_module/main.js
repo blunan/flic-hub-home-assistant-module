@@ -8,8 +8,8 @@ initButtons()
 setInterval(syncButtons, CFG.SYNC_TIME);
 
 function initButtons() {
-	var buttons = buttonManager.getButtons();
-	for (var i = 0; i < buttons.length; i++) {
+	const buttons = buttonManager.getButtons();
+	for (let i = 0; i < buttons.length; i++) {
 		initButton(buttons[i]);
 	}
 }
@@ -22,8 +22,8 @@ function initButton(button) {
 }
 
 function syncButtons() {
-	var buttons = buttonManager.getButtons();
-	for (var i = 0; i < buttons.length; i++) {
+	const buttons = buttonManager.getButtons();
+	for (let i = 0; i < buttons.length; i++) {
 		ha.sendButtonBatteryState(buttons[i]);
 		ha.sendButtonConnectivityState(buttons[i]);
 	}
@@ -60,7 +60,7 @@ buttonManager.on("buttonUp", function(obj) {
 
 buttonManager.on("buttonSingleOrDoubleClickOrHold", function(obj) {
 	const timestamp = Date.now();
-	var button = buttonManager.getButton(obj.bdaddr);
+	const button = buttonManager.getButton(obj.bdaddr);
 	if(timestamp - utils.getButtonEventTimestamp(button) >= CFG.MIN_EVENTS_OFFSET) {
 		utils.setButtonEventTimestamp(button, timestamp);
 		button.clickType = obj.isSingleClick ? C.CLICK_SINGLE : obj.isDoubleClick ? C.CLICK_DOUBLE : C.CLICK_HOLD;

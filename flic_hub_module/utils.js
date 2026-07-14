@@ -7,7 +7,7 @@ function getButtonName(button) {
 exports.getButtonName = getButtonName;
 
 function getButtonFriendlyName(button, suffix) {
-	var friendlyName = button.name == null ? getButtonName(button) : button.name;
+	let friendlyName = button.name == null ? getButtonName(button) : button.name;
 	if (typeof suffix != 'undefined') {
 		friendlyName = friendlyName + " " + suffix;
 	}
@@ -30,7 +30,7 @@ exports.getConnectivityIcon = function(ready) {
 	return ready ? 'mdi:bluetooth' : 'mdi:bluetooth-off';
 }
 
-var buttonEventTimestamps = {};
+const buttonEventTimestamps = {};
 
 exports.initButtonEventTimestamp = function(button) {
 	setButtonEventTimestamp(button, Date.now() - CFG.MIN_EVENTS_OFFSET);

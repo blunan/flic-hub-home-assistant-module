@@ -4,7 +4,7 @@ const C = require("./constants");
 const utils = require("./utils");
 
 exports.sendButtonState = function(obj, state) {
-	var button = JSON.parse(JSON.stringify(obj));
+	const button = JSON.parse(JSON.stringify(obj));
 	notifyHomeAssistant({
 		'method': "POST",
 		'url': CFG.SERVER_HOST + "/api/states/binary_sensor." + utils.getButtonName(button),
@@ -18,8 +18,8 @@ exports.sendButtonState = function(obj, state) {
 }
 
 exports.sendButtonBatteryState = function(obj) {
-	var button = JSON.parse(JSON.stringify(obj));
-	var battery = button.batteryStatus == null ? 0 : button.batteryStatus;
+	const button = JSON.parse(JSON.stringify(obj));
+	const battery = button.batteryStatus == null ? 0 : button.batteryStatus;
 	notifyHomeAssistant({
 		'method': "POST",
 		'url': CFG.SERVER_HOST + "/api/states/sensor." + utils.getButtonName(button) + "_battery",
@@ -36,7 +36,7 @@ exports.sendButtonBatteryState = function(obj) {
 }
 
 exports.sendButtonConnectivityState = function(obj) {
-	var button = JSON.parse(JSON.stringify(obj));
+	const button = JSON.parse(JSON.stringify(obj));
 	notifyHomeAssistant({
 		'method': "POST",
 		'url': CFG.SERVER_HOST + "/api/states/binary_sensor." + utils.getButtonName(button) + "_connectivity",
@@ -52,7 +52,7 @@ exports.sendButtonConnectivityState = function(obj) {
 }
 
 exports.sendButtonEvent = function(obj) {
-	var buttonEvent = JSON.parse(JSON.stringify(obj));
+	const buttonEvent = JSON.parse(JSON.stringify(obj));
 	notifyHomeAssistant({
 		'method': "POST",
 		'url': CFG.SERVER_HOST + "/api/events/flic_click",
@@ -65,7 +65,7 @@ exports.sendButtonEvent = function(obj) {
 }
 
 exports.sendRemovedState = function(obj) {
-	var button = JSON.parse(JSON.stringify(obj));
+	const button = JSON.parse(JSON.stringify(obj));
 	const buttonName = utils.getButtonName(button);
 	notifyHomeAssistant({
 		'method': "DELETE",
