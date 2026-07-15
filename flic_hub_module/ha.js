@@ -2,6 +2,7 @@ const http = require("http");
 const CFG = require("./config");
 const C = require("./constants");
 const utils = require("./utils");
+const logger = require("./logger");
 
 exports.sendButtonState = function(obj, state) {
 	const button = JSON.parse(JSON.stringify(obj));
@@ -93,12 +94,12 @@ function notifyHomeAssistant(options) {
 		}
 	}
 	http.makeRequest(options, function (error, result) {
-		console.log("------------------------------------------");
-		console.log("Request: " + JSON.stringify(options) + "\n");
 		if(error != null)  {
-			console.log("Error: " + JSON.stringify(error));
+			logger.error("Request: " + JSON.stringify(options));
+			logger.error("Request Error: " + JSON.stringify(error));
 		} else {
-			console.log("Response: " + JSON.stringify(result));
+			logger.debug("Request: " + JSON.stringify(options));
+			logger.debug("Request Response: " + JSON.stringify(result));
 		}
 	});
 }
