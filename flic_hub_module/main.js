@@ -63,18 +63,35 @@ buttonManager.on("buttonDown", function(obj) {
 });
 
 buttonManager.on("buttonUp", function(obj) {
-	ha.sendButtonState(buttonManager.getButton(obj.bdaddr), C.BUTTON_STATE_OFF);
+	const button = buttonManager.getButton(obj.bdaddr);
+	logger.info("onButtonUp detected for " +  utils.getButtonFriendlyName(button));
+	const state = utils.getButtonState(button);
+	if(state.eventEmitted === C.CLICK_HOLD && state.pressedTimestamp - state.eventTimestamp < CFG.MIN_EVENTS_OFFSET) {
+		logger.warn("Press on " + utils.getButtonFriendlyName(button) + " started less than MIN_EVENTS_OFFSET(" + CFG.MIN_EVENTS_OFFSET + "ms) after the last '" + C.CLICK_HOLD + "' event, it is treated as part of the same hold and its click events will be ignored");
+		utils.setButtonEventTimestamp(button, Date.now());
+	} else if(state.pressedTimestamp != C.INITIAL_STATE.eventTimestamp) {
+		utils.setButtonEventEmitted(button, C.CLICK_WAITING);
+	}
+	ha.sendButtonState(button, C.BUTTON_STATE_OFF);
 });
 
 buttonManager.on("buttonSingleOrDoubleClickOrHold", function(obj) {
 	const timestamp = Date.now();
 	const button = buttonManager.getButton(obj.bdaddr);
-	if(timestamp - utils.getButtonEventTimestamp(button) >= CFG.MIN_EVENTS_OFFSET) {
-		utils.setButtonEventTimestamp(button, timestamp);
-		button.clickType = obj.isSingleClick ? C.CLICK_SINGLE : obj.isDoubleClick ? C.CLICK_DOUBLE : C.CLICK_HOLD;
-		ha.sendButtonEvent(button);
+	const lastEventEmitted = utils.getButtonEventEmitted(button);
+	const lastEventTimestamp = utils.getButtonEventTimestamp(button);
+	const clickType = obj.isSingleClick ? C.CLICK_SINGLE : obj.isDoubleClick ? C.CLICK_DOUBLE : C.CLICK_HOLD;
+	if(lastEventEmitted === C.CLICK_NONE && clickType != C.CLICK_HOLD) {
+		logger.warn("Click type '" + clickType + "' event for " + utils.getButtonFriendlyName(button) + " ignored, the button has not been pressed since it was initialized");
+	} else if(lastEventEmitted != C.CLICK_WAITING && clickType != C.CLICK_HOLD) {
+		logger.warn("Click type '" + clickType + "' event for " + utils.getButtonFriendlyName(button) + " ignored, no new press (buttonDown -> buttonUp) since '" + lastEventEmitted + "' at " + lastEventTimestamp);
+	} else if(timestamp - lastEventTimestamp < CFG.MIN_EVENTS_OFFSET) {
+		logger.warn("Click type '" + clickType + "' event for " + utils.getButtonFriendlyName(button) + " ignored, emitted less than MIN_EVENTS_OFFSET(" + CFG.MIN_EVENTS_OFFSET + "ms) since '" + lastEventEmitted + "' at " + lastEventTimestamp);
 	} else {
-		console.log("------------------------------------------");
-		console.log(timestamp +  ": Warning: Event for " + utils.getButtonFriendlyName(button) + " was ignored, last button's event was at: " + utils.getButtonEventTimestamp(button));
+		logger.info("Click type '" + clickType + "' event for " + utils.getButtonFriendlyName(button) + " emitted at " + timestamp);
+		utils.setButtonEventTimestamp(button, timestamp);
+		utils.setButtonEventEmitted(button, clickType);
+		button.clickType = clickType;
+		ha.sendButtonEvent(button);
 	}
 });
