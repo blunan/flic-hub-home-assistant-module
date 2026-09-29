@@ -9,7 +9,7 @@ exports.getButtonName = getButtonName;
 
 function getButtonFriendlyName(button, suffix) {
 	let friendlyName = button.name == null ? getButtonName(button) : button.name;
-	if (typeof suffix != 'undefined') {
+	if(typeof suffix !== 'undefined') {
 		friendlyName = friendlyName + " " + suffix;
 	}
 	return friendlyName;
@@ -18,7 +18,7 @@ function getButtonFriendlyName(button, suffix) {
 exports.getButtonFriendlyName = getButtonFriendlyName;
 
 exports.getBatteryIcon = function(batteryLevel) {
-	if(typeof batteryLevel != 'number' || isNaN(batteryLevel)) {
+	if(typeof batteryLevel !== 'number' || isNaN(batteryLevel)) {
 		return 'mdi:battery-unknown';
 	} else if(batteryLevel < 5) {
 		return 'mdi:battery-outline';
