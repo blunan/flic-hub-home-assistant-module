@@ -81,7 +81,7 @@ describe("sendButtonConnectivityState", () => {
 
 describe("sendButtonEvent", () => {
 	test("POSTs to /api/events/flic_click with the click details", () => {
-		ha.sendButtonEvent({ bdaddr: ADDR, name: "Kitchen", clickType: "double" });
+		ha.sendButtonEvent({ bdaddr: ADDR, name: "Kitchen" }, "double");
 
 		const req = lastRequest();
 		expect(req.method).toBe("POST");
@@ -126,7 +126,7 @@ describe("request headers and trust store", () => {
 			haCertsOff.sendButtonState(button, "on");
 			haCertsOff.sendButtonBatteryState(button);
 			haCertsOff.sendButtonConnectivityState(button);
-			haCertsOff.sendButtonEvent(button);
+			haCertsOff.sendButtonEvent(button, "single");
 			haCertsOff.sendRemovedState(button);
 
 			const reqs = httpMock.makeRequest.mock.calls.map((call) => call[0]);

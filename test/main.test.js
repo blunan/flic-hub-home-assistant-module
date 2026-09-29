@@ -1,10 +1,19 @@
 // main.js runs side effects at require time: it initializes the known buttons,
 // starts the sync interval, and registers the buttonManager event handlers. So
-// the mocks (fake timers, mocked `ha`, seeded buttons) are set up first, then
-// main.js is required exactly once in beforeAll. The buttonManager mock captures
-// the handlers, which the tests invoke via `__fire`.
+// the mocks (fake timers, mocked `ha`, pinned config, seeded buttons) are set up
+// first, then main.js is required exactly once in beforeAll. The buttonManager
+// mock captures the handlers, which the tests invoke via `__fire`.
 
 jest.mock("../flic_hub_module/ha.js");
+// config.js is a user-edited deployment file, so every value main.js reads is
+// pinned here: the timing tests must not depend on someone's local tuning, and
+// logging is silenced because tests never assert on it.
+jest.mock("../flic_hub_module/config", () => ({
+	...jest.requireActual("../flic_hub_module/config"),
+	MIN_EVENTS_OFFSET: 600,
+	SYNC_TIME: 60_000,
+	LOG_LEVEL: jest.requireActual("../flic_hub_module/constants").LOG_LEVEL_NONE,
+}));
 
 const ha = require("../flic_hub_module/ha");
 const utils = require("../flic_hub_module/utils");
@@ -33,9 +42,9 @@ const up = (b) => fire("buttonUp", b);
 const clickEvent = (b, extra) => fire("buttonSingleOrDoubleClickOrHold", b, extra);
 const SINGLE = { isSingleClick: true };
 const DOUBLE = { isDoubleClick: true };
-const HOLD = {};
+const HOLD = { isHold: true };
 const single = (b) => { down(b); advance(PRESS_MS); up(b); advance(CLICK_REPORT_MS); clickEvent(b, SINGLE); };
-const sentClickTypes = () => ha.sendButtonEvent.mock.calls.map((c) => c[0].clickType);
+const sentClickTypes = () => ha.sendButtonEvent.mock.calls.map((c) => c[1]);
 
 let loadCalls;
 
@@ -73,13 +82,6 @@ describe("on load", () => {
 		expect(loadCalls.sendButtonBatteryState).toEqual([[buttonA], [buttonB]]);
 		expect(loadCalls.sendButtonConnectivityState).toEqual([[buttonA], [buttonB]]);
 	});
-
-	test("each button's state is initialized (timestamp 0, no press observed)", () => {
-		expect(utils.getButtonEventTimestamp(buttonA)).toBe(0);
-		expect(utils.getButtonEventTimestamp(buttonB)).toBe(0);
-		expect(utils.getButtonEventEmitted(buttonA)).toBe(C.CLICK_NONE);
-		expect(utils.getButtonEventEmitted(buttonB)).toBe(C.CLICK_NONE);
-	});
 });
 
 describe("periodic sync", () => {
@@ -100,35 +102,39 @@ describe("periodic sync", () => {
 
 describe("button lifecycle events", () => {
 	test("buttonConnected re-initializes the button resolved via getButton", () => {
-		const now = 1_700_000_100_000;
-		jest.setSystemTime(now);
 		const b = mkButton("aa:aa:aa:00:00:01");
 		buttonManager.__addButton(b);
+		// Seed every field so the reset is observable.
+		utils.setButtonPressedTimestamp(b);
+		utils.setButtonEventTimestamp(b, 999);
+		utils.setButtonEventEmitted(b, C.CLICK_HOLD);
 
-		buttonManager.__fire("buttonConnected", { bdaddr: b.bdaddr });
+		fire("buttonConnected", b);
 
 		expect(ha.sendButtonState).toHaveBeenCalledWith(b, C.BUTTON_STATE_OFF);
 		expect(ha.sendButtonBatteryState).toHaveBeenCalledWith(b);
 		expect(ha.sendButtonConnectivityState).toHaveBeenCalledWith(b);
-		expect(utils.getButtonEventTimestamp(b)).toBe(0);
+		expect(utils.getButtonState(b)).toEqual(C.INITIAL_STATE);
 	});
 
-	test("buttonDeleted removes the state and clears the timestamp", () => {
+	test("buttonDeleted removes the HA entities and the button's state", () => {
 		const b = mkButton("aa:aa:aa:00:00:02");
 		utils.setButtonEventTimestamp(b, 999); // seed so the removal is observable
-		expect(utils.getButtonEventTimestamp(b)).toBe(999);
+		utils.setButtonEventEmitted(b, C.CLICK_HOLD);
 
-		buttonManager.__fire("buttonDeleted", b);
+		// Like the SDK, the event carries only the bdaddr, and the button is no
+		// longer known to getButton.
+		fire("buttonDeleted", b);
 
-		expect(ha.sendRemovedState).toHaveBeenCalledWith(b);
-		expect(utils.getButtonEventTimestamp(b)).toBe(0);
+		expect(ha.sendRemovedState).toHaveBeenCalledWith({ bdaddr: b.bdaddr });
+		expect(utils.getButtonState(b)).toEqual(C.INITIAL_STATE);
 	});
 
 	test("buttonReady reports connectivity for the resolved button", () => {
 		const b = mkButton("aa:aa:aa:00:00:03");
 		buttonManager.__addButton(b);
 
-		buttonManager.__fire("buttonReady", { bdaddr: b.bdaddr });
+		fire("buttonReady", b);
 
 		expect(ha.sendButtonConnectivityState).toHaveBeenCalledTimes(1);
 		expect(ha.sendButtonConnectivityState).toHaveBeenCalledWith(b);
@@ -138,7 +144,7 @@ describe("button lifecycle events", () => {
 		const b = mkButton("aa:aa:aa:00:00:04");
 		buttonManager.__addButton(b);
 
-		buttonManager.__fire("buttonDisconnected", { bdaddr: b.bdaddr });
+		fire("buttonDisconnected", b);
 
 		expect(ha.sendButtonConnectivityState).toHaveBeenCalledTimes(1);
 		expect(ha.sendButtonConnectivityState).toHaveBeenCalledWith(b);
@@ -171,13 +177,15 @@ describe("button lifecycle events", () => {
 		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_WAITING);
 	});
 
-	// A (re)connect zeroes pressedTimestamp, so a release whose press was never seen
-	// (it started before the re-init) cannot arm the cycle.
-	test("buttonUp with no press since (re)connect turns the state off but stays 'none'", () => {
+	// A (re)connect zeroes pressedTimestamp, so the release of a press that started
+	// before the re-init cannot arm the cycle.
+	test("buttonUp of a press that started before a (re)connect turns the state off but stays 'none'", () => {
 		const b = mkButton("aa:aa:aa:00:00:16");
 		buttonManager.__addButton(b);
-		fire("buttonConnected", b);
 
+		down(b);
+		fire("buttonConnected", b);
+		advance(PRESS_MS);
 		up(b);
 
 		expect(ha.sendButtonState).toHaveBeenLastCalledWith(b, C.BUTTON_STATE_OFF);
@@ -231,8 +239,7 @@ describe("buttonSingleOrDoubleClickOrHold", () => {
 		single(b);
 
 		expect(ha.sendButtonEvent).toHaveBeenCalledTimes(1);
-		// The SDK hands out copies of button state, so compare by value, not identity.
-		expect(ha.sendButtonEvent.mock.calls[0][0]).toEqual({ ...b, clickType: C.CLICK_SINGLE });
+		expect(ha.sendButtonEvent).toHaveBeenCalledWith(b, C.CLICK_SINGLE);
 		expect(utils.getButtonEventTimestamp(b)).toBe(Date.now());
 		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_SINGLE);
 	});
@@ -250,31 +257,6 @@ describe("buttonSingleOrDoubleClickOrHold", () => {
 		expect(sentClickTypes()).toEqual([C.CLICK_DOUBLE]);
 	});
 
-	test("neither single nor double maps to click type hold", () => {
-		const b = mkButton("aa:aa:aa:00:00:09");
-		buttonManager.__addButton(b);
-
-		down(b);
-		advance(1_000);
-		clickEvent(b, HOLD);
-
-		expect(sentClickTypes()).toEqual([C.CLICK_HOLD]);
-	});
-
-	test("a duplicate event in the same press cycle is ignored", () => {
-		const b = mkButton("aa:aa:aa:00:00:0a");
-		buttonManager.__addButton(b);
-
-		single(b);
-		// Move past the time window so ONLY the click state can suppress the
-		// duplicate — otherwise this test stays green without the feature.
-		advance(CFG.MIN_EVENTS_OFFSET);
-		clickEvent(b, DOUBLE);
-
-		expect(sentClickTypes()).toEqual([C.CLICK_SINGLE]);
-		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_SINGLE);
-	});
-
 	test("a double's spurious release single is ignored", () => {
 		const b = mkButton("aa:aa:aa:00:00:17");
 		buttonManager.__addButton(b);
@@ -284,10 +266,13 @@ describe("buttonSingleOrDoubleClickOrHold", () => {
 		down(b); advance(PRESS_MS); up(b);
 		advance(CLICK_REPORT_MS);
 		clickEvent(b, DOUBLE);
+		// Move past the time window so ONLY the click state can suppress the
+		// duplicate — otherwise this test stays green without the feature.
 		advance(CFG.MIN_EVENTS_OFFSET);
 		clickEvent(b, SINGLE);
 
 		expect(sentClickTypes()).toEqual([C.CLICK_DOUBLE]);
+		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_DOUBLE);
 	});
 
 	test("an event within MIN_EVENTS_OFFSET is ignored; exactly MIN_EVENTS_OFFSET later is accepted", () => {
@@ -310,23 +295,27 @@ describe("buttonSingleOrDoubleClickOrHold", () => {
 		expect(sentClickTypes()).toEqual([C.CLICK_SINGLE]);
 	});
 
-	test("a click immediately after init is accepted (init zeroes the timestamp)", () => {
+	// The second click lands PRESS_MS + CLICK_REPORT_MS after the first, inside the
+	// window, so only the re-init zeroing the timestamp lets it through.
+	test("the first click after a (re)connect is accepted even within MIN_EVENTS_OFFSET of the last one", () => {
 		const b = mkButton("aa:aa:aa:00:00:0c");
 		buttonManager.__addButton(b);
 
+		single(b);
 		fire("buttonConnected", b);
 		single(b);
 
-		expect(sentClickTypes()).toEqual([C.CLICK_SINGLE]);
+		expect(sentClickTypes()).toEqual([C.CLICK_SINGLE, C.CLICK_SINGLE]);
 	});
 
-	test("a stray click before any press since (re)connect is ignored", () => {
+	test("a stray click after a (re)connect, before any new press, is ignored", () => {
 		const b = mkButton("aa:aa:aa:00:00:18");
 		buttonManager.__addButton(b);
 
+		down(b); advance(PRESS_MS); up(b); // armed: 'waiting'
 		fire("buttonConnected", b);
+		advance(CLICK_REPORT_MS);
 		clickEvent(b, SINGLE);
-		clickEvent(b, DOUBLE);
 
 		expect(ha.sendButtonEvent).not.toHaveBeenCalled();
 		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_NONE);
@@ -424,6 +413,19 @@ describe("hold", () => {
 		clickEvent(b, SINGLE);
 
 		expect(sentClickTypes()).toEqual([C.CLICK_HOLD, C.CLICK_SINGLE]);
+	});
+
+	// Holds skip the click-state gates, but not the time window.
+	test("a hold within MIN_EVENTS_OFFSET of the last accepted event is ignored", () => {
+		const b = mkButton("aa:aa:aa:00:00:1d");
+		buttonManager.__addButton(b);
+
+		single(b);
+		down(b);
+		advance(CFG.MIN_EVENTS_OFFSET - 1);
+		clickEvent(b, HOLD);
+
+		expect(sentClickTypes()).toEqual([C.CLICK_SINGLE]);
 	});
 
 	test("two separate holds are both accepted", () => {

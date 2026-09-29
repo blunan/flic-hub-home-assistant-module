@@ -66,16 +66,20 @@ describe("getBatteryIcon", () => {
 
 	const setWarningLevel = (level) => jest.replaceProperty(CFG, "WARNING_BATTERY_LEVEL", level);
 
-	// Inputs carrying no usable numeric level. "unknown" is what ha.js actually sends for a
-	// button that hasn't reported a battery; the rest are defensive — each one used to reach
-	// the rounding arithmetic and produce the unresolvable 'mdi:battery-NaN'.
-	const UNUSABLE_LEVELS = ["unknown", "unavailable", undefined, null, NaN, {}];
+	// Inputs carrying no usable numeric level. C.BATTERY_STATE_UNKNOWN is what ha.js actually
+	// sends for a button that hasn't reported a battery; getBatteryIcon deliberately matches on
+	// "is this a usable number" instead of that string, so the two cannot drift apart. The rest
+	// are defensive — each one used to reach the rounding arithmetic and produce the
+	// unresolvable 'mdi:battery-NaN'.
+	const UNUSABLE_LEVELS = [C.BATTERY_STATE_UNKNOWN, "unavailable", undefined, null, NaN, {}];
 
 	// A threshold of 0 empties the alert band ([5, 0] has no members), leaving the
 	// level->icon rounding as the only thing under test.
 	describe("rounding (warning band disabled)", () => {
 		beforeEach(() => setWarningLevel(0));
 
+		// The x5 rows round up to the next icon; under the old parseInt(level / 10) * 10
+		// behaviour they floored to the decade below.
 		test.each([
 			[0, "mdi:battery-outline"],
 			[4, "mdi:battery-outline"],
@@ -83,6 +87,8 @@ describe("getBatteryIcon", () => {
 			[14, "mdi:battery-10"],
 			[15, "mdi:battery-20"],
 			[24, "mdi:battery-20"],
+			[54, "mdi:battery-50"],
+			[55, "mdi:battery-60"],
 			[85, "mdi:battery-90"],
 			[94, "mdi:battery-90"],
 			[95, "mdi:battery"],
@@ -90,28 +96,15 @@ describe("getBatteryIcon", () => {
 		])("%i maps to %s", (level, icon) => {
 			expect(utils.getBatteryIcon(level)).toBe(icon);
 		});
-
-		// The distinguishing cases: each of these floors to the decade below, so they would
-		// all fail under the old parseInt(level / 10) * 10 behaviour.
-		test("rounds to the nearest icon rather than flooring to the decade", () => {
-			expect(utils.getBatteryIcon(15)).toBe("mdi:battery-20");
-			expect(utils.getBatteryIcon(55)).toBe("mdi:battery-60");
-			expect(utils.getBatteryIcon(85)).toBe("mdi:battery-90");
-		});
 	});
 
 	describe("warning band", () => {
+		// 5 and 8 would otherwise round to mdi:battery-10; the warning band wins.
 		test("spans [5, WARNING_BATTERY_LEVEL] inclusive", () => {
 			setWarningLevel(8);
 			expect(utils.getBatteryIcon(5)).toBe("mdi:battery-alert");
 			expect(utils.getBatteryIcon(8)).toBe("mdi:battery-alert");
 			expect(utils.getBatteryIcon(9)).toBe("mdi:battery-10");
-		});
-
-		test("overrides the icon the level would otherwise round to", () => {
-			setWarningLevel(8);
-			// 8 rounds to mdi:battery-10; the warning band wins.
-			expect(utils.getBatteryIcon(8)).toBe("mdi:battery-alert");
 		});
 
 		test("tracks the configured threshold instead of a fixed level", () => {
@@ -130,17 +123,8 @@ describe("getBatteryIcon", () => {
 		});
 	});
 
-	describe("levels with no usable value", () => {
-		test.each(UNUSABLE_LEVELS)("%p maps to the unknown icon", (level) => {
-			setWarningLevel(8);
-			expect(utils.getBatteryIcon(level)).toBe("mdi:battery-unknown");
-		});
-
-		// The sentinel lives in ha.js (C.BATTERY_STATE_UNKNOWN); getBatteryIcon deliberately
-		// matches on "is this a usable number" instead, so the two cannot drift apart.
-		test("the state ha.js sends for a missing batteryStatus maps to the unknown icon", () => {
-			expect(utils.getBatteryIcon(C.BATTERY_STATE_UNKNOWN)).toBe("mdi:battery-unknown");
-		});
+	test.each(UNUSABLE_LEVELS)("%p maps to the unknown icon", (level) => {
+		expect(utils.getBatteryIcon(level)).toBe("mdi:battery-unknown");
 	});
 
 	test.each([0, 5, 8, 10, 25, 95])(
@@ -164,52 +148,9 @@ describe("getConnectivityIcon", () => {
 	});
 });
 
-describe("button event timestamp state", () => {
-	test("an unknown button reads back as 0", () => {
-		expect(utils.getButtonEventTimestamp(button("00:00:00:00:00:01"))).toBe(0);
-	});
-
-	test("set / get round-trips", () => {
-		const b = button("00:00:00:00:00:02");
-		utils.setButtonEventTimestamp(b, 123456);
-		expect(utils.getButtonEventTimestamp(b)).toBe(123456);
-	});
-
-	test("initButtonState resets to INITIAL_STATE: timestamp 0 and emitted state 'none'", () => {
-		const b = button("00:00:00:00:00:03");
-		utils.setButtonEventTimestamp(b, 123456);
-		utils.setButtonEventEmitted(b, C.CLICK_HOLD); // stale click type from before the (re)connect
-		utils.initButtonState(b);
-		expect(utils.getButtonEventTimestamp(b)).toBe(0);
-		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_NONE);
-	});
-});
-
-describe("button event emitted flag", () => {
-	test("an unknown button reads back as 'none' (no press observed yet)", () => {
-		expect(utils.getButtonEventEmitted(button("00:00:00:00:00:04"))).toBe(C.CLICK_NONE);
-	});
-
-	test("set / get round-trips", () => {
-		const b = button("00:00:00:00:00:05");
-		utils.setButtonEventEmitted(b, C.CLICK_DOUBLE);
-		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_DOUBLE);
-		utils.setButtonEventEmitted(b, C.CLICK_WAITING);
-		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_WAITING);
-	});
-
-	test("the flag is isolated per button", () => {
-		const a = button("00:00:00:00:00:06");
-		const b = button("00:00:00:00:00:07");
-		utils.setButtonEventEmitted(a, C.CLICK_SINGLE);
-		expect(utils.getButtonEventEmitted(a)).toBe(C.CLICK_SINGLE);
-		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_NONE);
-	});
-});
-
 // utils.js only stores state; deciding what a press means (arming, the hold
 // continuation) is main.js's job.
-describe("press state (setButtonPressedTimestamp / getButtonState)", () => {
+describe("per-button state", () => {
 	beforeEach(() => {
 		jest.useFakeTimers();
 	});
@@ -218,28 +159,36 @@ describe("press state (setButtonPressedTimestamp / getButtonState)", () => {
 		jest.useRealTimers();
 	});
 
-	test("setButtonPressedTimestamp stamps the press and leaves the click state untouched", () => {
-		const t = 1_700_000_000_000;
-		jest.setSystemTime(t);
-		const b = button("00:00:00:00:00:0c");
-		utils.setButtonEventEmitted(b, C.CLICK_DOUBLE);
-		utils.setButtonPressedTimestamp(b);
-		expect(utils.getButtonState(b).pressedTimestamp).toBe(t);
-		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_DOUBLE);
+	test("an unknown button reads back as INITIAL_STATE without creating an entry", () => {
+		const b = button("00:00:00:00:00:01");
+		expect(utils.getButtonState(b)).toEqual(C.INITIAL_STATE);
+		expect(utils.getButtonEventTimestamp(b)).toBe(0);
+		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_NONE);
+		expect(utils.deleteButtonState(b)).toBe(false);
 	});
 
-	test("getButtonState returns every field of the stored state", () => {
+	test("the setters round-trip through the field getters and getButtonState", () => {
 		const t = 1_700_000_000_000;
 		jest.setSystemTime(t);
-		const b = button("00:00:00:00:00:0d");
+		const b = button("00:00:00:00:00:02");
 		utils.setButtonPressedTimestamp(b);
 		utils.setButtonEventTimestamp(b, 42);
 		utils.setButtonEventEmitted(b, C.CLICK_WAITING);
+		expect(utils.getButtonEventTimestamp(b)).toBe(42);
+		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_WAITING);
 		expect(utils.getButtonState(b)).toEqual({ eventTimestamp: 42, pressedTimestamp: t, eventEmitted: C.CLICK_WAITING });
 	});
 
+	test("state is isolated per button", () => {
+		const a = button("00:00:00:00:00:03");
+		const b = button("00:00:00:00:00:04");
+		utils.setButtonEventEmitted(a, C.CLICK_SINGLE);
+		expect(utils.getButtonEventEmitted(a)).toBe(C.CLICK_SINGLE);
+		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_NONE);
+	});
+
 	test("getButtonState returns a copy, not the stored state", () => {
-		const b = button("00:00:00:00:00:0e");
+		const b = button("00:00:00:00:00:05");
 		utils.setButtonEventEmitted(b, C.CLICK_WAITING);
 		const state = utils.getButtonState(b);
 		state.eventEmitted = C.CLICK_HOLD;
@@ -248,37 +197,24 @@ describe("press state (setButtonPressedTimestamp / getButtonState)", () => {
 		expect(utils.getButtonEventTimestamp(b)).toBe(0);
 	});
 
-	test("getButtonState of an unknown button is the initial state, without creating it", () => {
-		const b = button("00:00:00:00:00:0f");
+	test("initButtonState resets every field to INITIAL_STATE", () => {
+		jest.setSystemTime(1_700_000_000_000);
+		const b = button("00:00:00:00:00:06");
+		utils.setButtonPressedTimestamp(b);
+		utils.setButtonEventTimestamp(b, 123456);
+		utils.setButtonEventEmitted(b, C.CLICK_HOLD); // stale click type from before the (re)connect
+		utils.initButtonState(b);
 		expect(utils.getButtonState(b)).toEqual(C.INITIAL_STATE);
-		expect(utils.deleteButtonState(b)).toBe(false);
-	});
-});
-
-describe("deleteButtonState", () => {
-	test("returns true and clears the timestamp when present", () => {
-		const b = button("00:00:00:00:00:08");
-		utils.setButtonEventTimestamp(b, 42);
-		expect(utils.deleteButtonState(b)).toBe(true);
-		expect(utils.getButtonEventTimestamp(b)).toBe(0);
 	});
 
-	test("returns false for an unknown button", () => {
-		expect(utils.deleteButtonState(button("00:00:00:00:00:09"))).toBe(false);
-	});
-
-	test("also clears the emitted state back to 'none'", () => {
-		const b = button("00:00:00:00:00:0a");
+	test("deleteButtonState removes the entry and reports it", () => {
+		jest.setSystemTime(1_700_000_000_000);
+		const b = button("00:00:00:00:00:07");
+		utils.setButtonPressedTimestamp(b);
 		utils.setButtonEventTimestamp(b, 42);
 		utils.setButtonEventEmitted(b, C.CLICK_HOLD);
-		utils.deleteButtonState(b);
-		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_NONE);
-	});
-
-	test("returns true when only the emitted flag was set", () => {
-		const b = button("00:00:00:00:00:0b");
-		utils.setButtonEventEmitted(b, C.CLICK_DOUBLE);
 		expect(utils.deleteButtonState(b)).toBe(true);
-		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_NONE);
+		expect(utils.getButtonState(b)).toEqual(C.INITIAL_STATE);
+		expect(utils.deleteButtonState(b)).toBe(false);
 	});
 });
