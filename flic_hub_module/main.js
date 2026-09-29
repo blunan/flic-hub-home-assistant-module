@@ -5,7 +5,7 @@ const utils = require("./utils");
 const logger = require("./logger");
 const buttonManager = require("buttons");
 
-initButtons()
+initButtons();
 setInterval(syncButtons, CFG.SYNC_TIME);
 
 function initButtons() {
@@ -45,26 +45,26 @@ buttonManager.on("buttonDeleted", function(obj) {
 
 buttonManager.on("buttonReady", function(obj) {
 	const button = buttonManager.getButton(obj.bdaddr);
-	logger.info("onButtonReady detected for " +  utils.getButtonFriendlyName(button));
+	logger.info("onButtonReady detected for " + utils.getButtonFriendlyName(button));
 	ha.sendButtonConnectivityState(button);
 });
 
 buttonManager.on("buttonDisconnected", function(obj) {
 	const button = buttonManager.getButton(obj.bdaddr);
-	logger.warn("onButtonDisconnected detected for " +  utils.getButtonFriendlyName(button));
+	logger.warn("onButtonDisconnected detected for " + utils.getButtonFriendlyName(button));
 	ha.sendButtonConnectivityState(button);
 });
 
 buttonManager.on("buttonDown", function(obj) {
 	const button = buttonManager.getButton(obj.bdaddr);
-	logger.info("onButtonDown detected for " +  utils.getButtonFriendlyName(button));
+	logger.info("onButtonDown detected for " + utils.getButtonFriendlyName(button));
 	utils.setButtonPressedTimestamp(button);
 	ha.sendButtonState(button, C.BUTTON_STATE_ON);
 });
 
 buttonManager.on("buttonUp", function(obj) {
 	const button = buttonManager.getButton(obj.bdaddr);
-	logger.info("onButtonUp detected for " +  utils.getButtonFriendlyName(button));
+	logger.info("onButtonUp detected for " + utils.getButtonFriendlyName(button));
 	const state = utils.getButtonState(button);
 	if(state.eventEmitted === C.CLICK_HOLD && state.pressedTimestamp - state.eventTimestamp < CFG.MIN_EVENTS_OFFSET) {
 		logger.warn("Press on " + utils.getButtonFriendlyName(button) + " started less than MIN_EVENTS_OFFSET(" + CFG.MIN_EVENTS_OFFSET + "ms) after the last '" + C.CLICK_HOLD + "' event, it is treated as part of the same hold and its click events will be ignored");
