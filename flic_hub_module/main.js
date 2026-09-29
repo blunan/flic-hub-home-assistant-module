@@ -91,7 +91,6 @@ buttonManager.on("buttonSingleOrDoubleClickOrHold", function(obj) {
 		logger.info("Click type '" + clickType + "' event for " + utils.getButtonFriendlyName(button) + " emitted at " + timestamp);
 		utils.setButtonEventTimestamp(button, timestamp);
 		utils.setButtonEventEmitted(button, clickType);
-		button.clickType = clickType;
-		ha.sendButtonEvent(button);
+		ha.sendButtonEvent(button, clickType);
 	}
 });

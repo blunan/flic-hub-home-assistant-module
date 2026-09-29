@@ -4,8 +4,7 @@ const C = require("./constants");
 const utils = require("./utils");
 const logger = require("./logger");
 
-exports.sendButtonState = function(obj, state) {
-	const button = JSON.parse(JSON.stringify(obj));
+exports.sendButtonState = function(button, state) {
 	notifyHomeAssistant({
 		'method': "POST",
 		'url': CFG.SERVER_HOST + "/api/states/binary_sensor." + utils.getButtonName(button),
@@ -18,8 +17,7 @@ exports.sendButtonState = function(obj, state) {
 	});
 }
 
-exports.sendButtonBatteryState = function(obj) {
-	const button = JSON.parse(JSON.stringify(obj));
+exports.sendButtonBatteryState = function(button) {
 	const battery = button.batteryStatus == null ? C.BATTERY_STATE_UNKNOWN : button.batteryStatus;
 	notifyHomeAssistant({
 		'method': "POST",
@@ -36,8 +34,7 @@ exports.sendButtonBatteryState = function(obj) {
 	});
 }
 
-exports.sendButtonConnectivityState = function(obj) {
-	const button = JSON.parse(JSON.stringify(obj));
+exports.sendButtonConnectivityState = function(button) {
 	notifyHomeAssistant({
 		'method': "POST",
 		'url': CFG.SERVER_HOST + "/api/states/binary_sensor." + utils.getButtonName(button) + "_connectivity",
@@ -52,21 +49,19 @@ exports.sendButtonConnectivityState = function(obj) {
 	});
 }
 
-exports.sendButtonEvent = function(obj) {
-	const buttonEvent = JSON.parse(JSON.stringify(obj));
+exports.sendButtonEvent = function(button, clickType) {
 	notifyHomeAssistant({
 		'method': "POST",
 		'url': CFG.SERVER_HOST + "/api/events/flic_click",
 		'content': JSON.stringify({
-			'button_name': utils.getButtonName(buttonEvent),
-			'button_address': buttonEvent.bdaddr,
-			'click_type': buttonEvent.clickType
+			'button_name': utils.getButtonName(button),
+			'button_address': button.bdaddr,
+			'click_type': clickType
 		})
 	});
 }
 
-exports.sendRemovedState = function(obj) {
-	const button = JSON.parse(JSON.stringify(obj));
+exports.sendRemovedState = function(button) {
 	const buttonName = utils.getButtonName(button);
 	notifyHomeAssistant({
 		'method': "DELETE",
@@ -78,7 +73,7 @@ exports.sendRemovedState = function(obj) {
 	});
 	notifyHomeAssistant({
 		'method': "DELETE",
-		'url': CFG.SERVER_HOST + "/api/states/binary_sensor." + buttonName + "_connectivity",
+		'url': CFG.SERVER_HOST + "/api/states/binary_sensor." + buttonName + "_connectivity"
 	});
 }
 
