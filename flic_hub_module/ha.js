@@ -88,12 +88,13 @@ function notifyHomeAssistant(options) {
 			'validateHostname': CFG.VERIFY_CERTIFICATE
 		}
 	}
-	http.makeRequest(options, function (error, result) {
-		if(error != null)  {
-			logger.error("Request: " + JSON.stringify(options));
+	const request = JSON.stringify({'method': options.method, 'url': options.url, 'content': options.content});
+	http.makeRequest(options, function(error, result) {
+		if(error != null) {
+			logger.error("Request: " + request);
 			logger.error("Request Error: " + JSON.stringify(error));
 		} else {
-			logger.debug("Request: " + JSON.stringify(options));
+			logger.debug("Request: " + request);
 			logger.debug("Request Response: " + JSON.stringify(result));
 		}
 	});
