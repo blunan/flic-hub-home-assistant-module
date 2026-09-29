@@ -93,6 +93,9 @@ function notifyHomeAssistant(options) {
 		if(error != null) {
 			logger.error("Request: " + request);
 			logger.error("Request Error: " + JSON.stringify(error));
+		} else if(result != null && result.statusCode >= 400 && !(options.method === "DELETE" && result.statusCode === 404)) {
+			logger.error("Request: " + request);
+			logger.error("Request Error (" + result.statusCode + "): " + JSON.stringify(result));
 		} else {
 			logger.debug("Request: " + request);
 			logger.debug("Request Response: " + JSON.stringify(result));

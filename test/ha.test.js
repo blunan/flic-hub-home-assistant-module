@@ -7,7 +7,6 @@ jest.mock("http", () => ({ makeRequest: jest.fn() }), { virtual: true });
 const http = require("http");
 const ha = require("../flic_hub_module/ha");
 const CFG = require("../flic_hub_module/config");
-
 const requests = () => http.makeRequest.mock.calls.map((call) => call[0]);
 const lastRequest = () => http.makeRequest.mock.calls[http.makeRequest.mock.calls.length - 1][0];
 
@@ -161,3 +160,4 @@ describe("request headers and trust store", () => {
 		});
 	});
 });
+

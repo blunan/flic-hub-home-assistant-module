@@ -67,7 +67,9 @@ buttonManager.on("buttonUp", function(obj) {
 	logger.info("onButtonUp detected for " + utils.getButtonFriendlyName(button));
 	const state = utils.getButtonState(button);
 	if(state.eventEmitted === C.CLICK_HOLD && state.pressedTimestamp - state.eventTimestamp < CFG.MIN_EVENTS_OFFSET) {
+		if(state.pressedTimestamp >= state.eventTimestamp) {
 		logger.warn("Press on " + utils.getButtonFriendlyName(button) + " started less than MIN_EVENTS_OFFSET(" + CFG.MIN_EVENTS_OFFSET + "ms) after the last '" + C.CLICK_HOLD + "' event, it is treated as part of the same hold and its click events will be ignored");
+		}
 		utils.setButtonEventTimestamp(button, Date.now());
 	} else if(state.pressedTimestamp !== C.INITIAL_STATE.pressedTimestamp) {
 		utils.setButtonEventEmitted(button, C.CLICK_WAITING);
