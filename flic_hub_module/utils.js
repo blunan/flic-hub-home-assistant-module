@@ -34,19 +34,23 @@ exports.getConnectivityIcon = function(ready) {
 	return ready ? 'mdi:bluetooth' : 'mdi:bluetooth-off';
 }
 
-const buttonEventStates = {};
+const buttonEventStates = new Map();
 
 function initButtonState(button) {
-	buttonEventStates[button.bdaddr] = {... C.INITIAL_STATE};
+	buttonEventStates.set(button.bdaddr, {... C.INITIAL_STATE});
 }
 
 exports.initButtonState = initButtonState;
 
 function getOrCreateButtonState(button) {
-	if (!buttonEventStates.hasOwnProperty(button.bdaddr)) {
+	if(!buttonEventStates.has(button.bdaddr)) {
 		initButtonState(button);
 	}
-	return buttonEventStates[button.bdaddr];
+	return buttonEventStates.get(button.bdaddr);
+}
+
+function findButtonState(button) {
+	return buttonEventStates.get(button.bdaddr) || C.INITIAL_STATE;
 }
 
 function setButtonEventTimestamp(button, timestamp) {
@@ -56,7 +60,7 @@ function setButtonEventTimestamp(button, timestamp) {
 exports.setButtonEventTimestamp = setButtonEventTimestamp;
 
 exports.getButtonEventTimestamp = function(button) {
-	return (buttonEventStates[button.bdaddr] || C.INITIAL_STATE).eventTimestamp;
+	return findButtonState(button).eventTimestamp;
 }
 
 function setButtonPressedTimestamp(button) {
@@ -66,7 +70,7 @@ function setButtonPressedTimestamp(button) {
 exports.setButtonPressedTimestamp = setButtonPressedTimestamp;
 
 exports.getButtonState = function(button) {
-	return {... (buttonEventStates[button.bdaddr] || C.INITIAL_STATE)};
+	return {... findButtonState(button)};
 }
 
 function setButtonEventEmitted(button, event) {
@@ -76,12 +80,9 @@ function setButtonEventEmitted(button, event) {
 exports.setButtonEventEmitted = setButtonEventEmitted;
 
 exports.getButtonEventEmitted = function(button) {
-	return (buttonEventStates[button.bdaddr] || C.INITIAL_STATE).eventEmitted;
+	return findButtonState(button).eventEmitted;
 }
 
 exports.deleteButtonState = function(button) {
-	if (buttonEventStates.hasOwnProperty(button.bdaddr)) {
-		return delete buttonEventStates[button.bdaddr];
-	}
-	return false;
+	return buttonEventStates.delete(button.bdaddr);
 }
