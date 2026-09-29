@@ -175,68 +175,110 @@ describe("button event timestamp state", () => {
 		expect(utils.getButtonEventTimestamp(b)).toBe(123456);
 	});
 
-	test("initButtonEventState back-dates the timestamp by MIN_EVENTS_OFFSET and clears the emitted flag", () => {
-		jest.useFakeTimers();
-		try {
-			const now = 1_700_000_000_000;
-			jest.setSystemTime(now);
-			const b = button("00:00:00:00:00:03");
-			utils.setButtonEventEmitted(b, true); // stale flag from before the (re)connect
-			utils.initButtonEventState(b);
-			expect(utils.getButtonEventTimestamp(b)).toBe(now - CFG.MIN_EVENTS_OFFSET);
-			expect(utils.getButtonEventEmitted(b)).toBe(false);
-		} finally {
-			jest.useRealTimers();
-		}
+	test("initButtonState resets to INITIAL_STATE: timestamp 0 and emitted state 'none'", () => {
+		const b = button("00:00:00:00:00:03");
+		utils.setButtonEventTimestamp(b, 123456);
+		utils.setButtonEventEmitted(b, C.CLICK_HOLD); // stale click type from before the (re)connect
+		utils.initButtonState(b);
+		expect(utils.getButtonEventTimestamp(b)).toBe(0);
+		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_NONE);
 	});
 });
 
 describe("button event emitted flag", () => {
-	test("an unknown button reads back as false", () => {
-		expect(utils.getButtonEventEmitted(button("00:00:00:00:00:04"))).toBe(false);
+	test("an unknown button reads back as 'none' (no press observed yet)", () => {
+		expect(utils.getButtonEventEmitted(button("00:00:00:00:00:04"))).toBe(C.CLICK_NONE);
 	});
 
 	test("set / get round-trips", () => {
 		const b = button("00:00:00:00:00:05");
-		utils.setButtonEventEmitted(b, true);
-		expect(utils.getButtonEventEmitted(b)).toBe(true);
-		utils.setButtonEventEmitted(b, false);
-		expect(utils.getButtonEventEmitted(b)).toBe(false);
+		utils.setButtonEventEmitted(b, C.CLICK_DOUBLE);
+		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_DOUBLE);
+		utils.setButtonEventEmitted(b, C.CLICK_WAITING);
+		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_WAITING);
 	});
 
 	test("the flag is isolated per button", () => {
 		const a = button("00:00:00:00:00:06");
 		const b = button("00:00:00:00:00:07");
-		utils.setButtonEventEmitted(a, true);
-		expect(utils.getButtonEventEmitted(a)).toBe(true);
-		expect(utils.getButtonEventEmitted(b)).toBe(false);
+		utils.setButtonEventEmitted(a, C.CLICK_SINGLE);
+		expect(utils.getButtonEventEmitted(a)).toBe(C.CLICK_SINGLE);
+		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_NONE);
 	});
 });
 
-describe("deleteButtonEventState", () => {
+// utils.js only stores state; deciding what a press means (arming, the hold
+// continuation) is main.js's job.
+describe("press state (setButtonPressedTimestamp / getButtonState)", () => {
+	beforeEach(() => {
+		jest.useFakeTimers();
+	});
+
+	afterEach(() => {
+		jest.useRealTimers();
+	});
+
+	test("setButtonPressedTimestamp stamps the press and leaves the click state untouched", () => {
+		const t = 1_700_000_000_000;
+		jest.setSystemTime(t);
+		const b = button("00:00:00:00:00:0c");
+		utils.setButtonEventEmitted(b, C.CLICK_DOUBLE);
+		utils.setButtonPressedTimestamp(b);
+		expect(utils.getButtonState(b).pressedTimestamp).toBe(t);
+		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_DOUBLE);
+	});
+
+	test("getButtonState returns every field of the stored state", () => {
+		const t = 1_700_000_000_000;
+		jest.setSystemTime(t);
+		const b = button("00:00:00:00:00:0d");
+		utils.setButtonPressedTimestamp(b);
+		utils.setButtonEventTimestamp(b, 42);
+		utils.setButtonEventEmitted(b, C.CLICK_WAITING);
+		expect(utils.getButtonState(b)).toEqual({ eventTimestamp: 42, pressedTimestamp: t, eventEmitted: C.CLICK_WAITING });
+	});
+
+	test("getButtonState returns a copy, not the stored state", () => {
+		const b = button("00:00:00:00:00:0e");
+		utils.setButtonEventEmitted(b, C.CLICK_WAITING);
+		const state = utils.getButtonState(b);
+		state.eventEmitted = C.CLICK_HOLD;
+		state.eventTimestamp = 42;
+		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_WAITING);
+		expect(utils.getButtonEventTimestamp(b)).toBe(0);
+	});
+
+	test("getButtonState of an unknown button is the initial state, without creating it", () => {
+		const b = button("00:00:00:00:00:0f");
+		expect(utils.getButtonState(b)).toEqual(C.INITIAL_STATE);
+		expect(utils.deleteButtonState(b)).toBe(false);
+	});
+});
+
+describe("deleteButtonState", () => {
 	test("returns true and clears the timestamp when present", () => {
 		const b = button("00:00:00:00:00:08");
 		utils.setButtonEventTimestamp(b, 42);
-		expect(utils.deleteButtonEventState(b)).toBe(true);
+		expect(utils.deleteButtonState(b)).toBe(true);
 		expect(utils.getButtonEventTimestamp(b)).toBe(0);
 	});
 
 	test("returns false for an unknown button", () => {
-		expect(utils.deleteButtonEventState(button("00:00:00:00:00:09"))).toBe(false);
+		expect(utils.deleteButtonState(button("00:00:00:00:00:09"))).toBe(false);
 	});
 
-	test("also clears the emitted flag", () => {
+	test("also clears the emitted state back to 'none'", () => {
 		const b = button("00:00:00:00:00:0a");
 		utils.setButtonEventTimestamp(b, 42);
-		utils.setButtonEventEmitted(b, true);
-		utils.deleteButtonEventState(b);
-		expect(utils.getButtonEventEmitted(b)).toBe(false);
+		utils.setButtonEventEmitted(b, C.CLICK_HOLD);
+		utils.deleteButtonState(b);
+		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_NONE);
 	});
 
 	test("returns true when only the emitted flag was set", () => {
 		const b = button("00:00:00:00:00:0b");
-		utils.setButtonEventEmitted(b, true);
-		expect(utils.deleteButtonEventState(b)).toBe(true);
-		expect(utils.getButtonEventEmitted(b)).toBe(false);
+		utils.setButtonEventEmitted(b, C.CLICK_DOUBLE);
+		expect(utils.deleteButtonState(b)).toBe(true);
+		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_NONE);
 	});
 });

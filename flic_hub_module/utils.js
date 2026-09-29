@@ -36,43 +36,50 @@ exports.getConnectivityIcon = function(ready) {
 
 const buttonEventStates = {};
 
-function initButtonEventState(button) {
-	buttonEventStates[button.bdaddr] = {
-		'timestamp': Date.now() - CFG.MIN_EVENTS_OFFSET,
-		'emitted': false
-	};
+function initButtonState(button) {
+	buttonEventStates[button.bdaddr] = {... C.INITIAL_STATE};
 }
 
-exports.initButtonEventState = initButtonEventState;
+exports.initButtonState = initButtonState;
 
-function getOrCreateButtonEventState(button) {
+function getOrCreateButtonState(button) {
 	if (!buttonEventStates.hasOwnProperty(button.bdaddr)) {
-		buttonEventStates[button.bdaddr] = {... C.EMPTY_STATE};
+		initButtonState(button);
 	}
 	return buttonEventStates[button.bdaddr];
 }
 
 function setButtonEventTimestamp(button, timestamp) {
-	getOrCreateButtonEventState(button).timestamp = timestamp;
+	getOrCreateButtonState(button).eventTimestamp = timestamp;
 }
 
 exports.setButtonEventTimestamp = setButtonEventTimestamp;
 
 exports.getButtonEventTimestamp = function(button) {
-	return (buttonEventStates[button.bdaddr] || C.EMPTY_STATE).timestamp;
+	return (buttonEventStates[button.bdaddr] || C.INITIAL_STATE).eventTimestamp;
 }
 
-function setButtonEventEmitted(button, emitted) {
-	getOrCreateButtonEventState(button).emitted = emitted;
+function setButtonPressedTimestamp(button) {
+	getOrCreateButtonState(button).pressedTimestamp = Date.now();
+}
+
+exports.setButtonPressedTimestamp = setButtonPressedTimestamp;
+
+exports.getButtonState = function(button) {
+	return {... (buttonEventStates[button.bdaddr] || C.INITIAL_STATE)};
+}
+
+function setButtonEventEmitted(button, event) {
+	getOrCreateButtonState(button).eventEmitted = event;
 }
 
 exports.setButtonEventEmitted = setButtonEventEmitted;
 
 exports.getButtonEventEmitted = function(button) {
-	return (buttonEventStates[button.bdaddr] || C.EMPTY_STATE).emitted;
+	return (buttonEventStates[button.bdaddr] || C.INITIAL_STATE).eventEmitted;
 }
 
-exports.deleteButtonEventState = function(button) {
+exports.deleteButtonState = function(button) {
 	if (buttonEventStates.hasOwnProperty(button.bdaddr)) {
 		return delete buttonEventStates[button.bdaddr];
 	}

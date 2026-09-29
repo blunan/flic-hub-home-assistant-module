@@ -2,6 +2,7 @@ const ha = require("./ha");
 const CFG = require("./config");
 const C = require("./constants");
 const utils = require("./utils");
+const logger = require("./logger");
 const buttonManager = require("buttons");
 
 initButtons()
@@ -15,7 +16,7 @@ function initButtons() {
 }
 
 function initButton(button) {
-	utils.initButtonEventTimestamp(button);
+	utils.initButtonState(button);
 	ha.sendButtonState(button, C.BUTTON_STATE_OFF);
 	ha.sendButtonBatteryState(button);
 	ha.sendButtonConnectivityState(button);
@@ -30,7 +31,7 @@ function syncButtons() {
 }
 
 function deleteButton(button) {
-	utils.deleteButtonEventTimestamp(button);
+	utils.deleteButtonState(button);
 	ha.sendRemovedState(button);
 }
 
@@ -43,15 +44,22 @@ buttonManager.on("buttonDeleted", function(obj) {
 });
 
 buttonManager.on("buttonReady", function(obj) {
-	ha.sendButtonConnectivityState(buttonManager.getButton(obj.bdaddr));
+	const button = buttonManager.getButton(obj.bdaddr);
+	logger.info("onButtonReady detected for " +  utils.getButtonFriendlyName(button));
+	ha.sendButtonConnectivityState(button);
 });
 
 buttonManager.on("buttonDisconnected", function(obj) {
-	ha.sendButtonConnectivityState(buttonManager.getButton(obj.bdaddr));
+	const button = buttonManager.getButton(obj.bdaddr);
+	logger.warn("onButtonDisconnected detected for " +  utils.getButtonFriendlyName(button));
+	ha.sendButtonConnectivityState(button);
 });
 
 buttonManager.on("buttonDown", function(obj) {
-	ha.sendButtonState(buttonManager.getButton(obj.bdaddr), C.BUTTON_STATE_ON);
+	const button = buttonManager.getButton(obj.bdaddr);
+	logger.info("onButtonDown detected for " +  utils.getButtonFriendlyName(button));
+	utils.setButtonPressedTimestamp(button);
+	ha.sendButtonState(button, C.BUTTON_STATE_ON);
 });
 
 buttonManager.on("buttonUp", function(obj) {
