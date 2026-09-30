@@ -1,0 +1,53 @@
+blueprint:
+  name: Flic Button
+  description: Handle single, double, and hold clicks from a Flic button
+  domain: automation
+  input:
+    button_name:
+      name: Flic Button Name
+      description: The 'button_name' found in the event_data (e.g., flic_80e4da779fc7).
+      selector:
+        text:
+    single_action:
+      name: Single Click Action
+      default: []
+      selector:
+        action: {}
+    double_action:
+      name: Double Click Action
+      default: []
+      selector:
+        action: {}
+    hold_action:
+      name: Hold Action
+      default: []
+      selector:
+        action: {}
+
+trigger:
+  - platform: event
+    event_type: flic_click
+    event_data:
+      button_name: !input button_name
+
+action:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ trigger.event.data.click_type == 'single' }}
+        sequence: !input single_action
+
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ trigger.event.data.click_type == 'double' }}
+        sequence: !input double_action
+
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ trigger.event.data.click_type == 'hold' }}
+        sequence: !input hold_action
+
+mode: single
