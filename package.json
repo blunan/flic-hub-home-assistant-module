@@ -1,6 +1,6 @@
 {
 	"name": "flic-hub-home-assistant-module",
-	"version": "1.2.6",
+	"version": "1.3.0",
 	"description": "Flic Hub Module for Home Assistant",
 	"private": true,
 	"author": "Brayan Luna <blun4n@gmail.com> (https://www.blunan.com)",

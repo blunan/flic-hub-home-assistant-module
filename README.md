@@ -1,6 +1,6 @@
 # 🔘 Flic Hub Module for Home Assistant
 
-![Version](https://img.shields.io/badge/version-1.2.6-blue)
+![Version](https://img.shields.io/badge/version-1.3.0-blue)
 ![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey)
 ![Flic Hub SDK](https://img.shields.io/badge/flic--hub--sdk-compatible-f4a51c)
 ![Home Assistant](https://img.shields.io/badge/home--assistant-REST%20API-41BDF5)
