@@ -2,6 +2,9 @@ blueprint:
   name: Flic Button
   description: Handle single, double, and hold clicks from a Flic button
   domain: automation
+  source_url: https://github.com/blunan/flic-hub-home-assistant-module/blob/main/flic-button.yaml
+  homeassistant:
+    min_version: 2024.10.0
   input:
     button_name:
       name: Flic Button Name
@@ -24,13 +27,13 @@ blueprint:
       selector:
         action: {}
 
-trigger:
-  - platform: event
+triggers:
+  - trigger: event
     event_type: flic_click
     event_data:
       button_name: !input button_name
 
-action:
+actions:
   - choose:
       - conditions:
           - condition: template

@@ -2,20 +2,21 @@ const ha = require("./ha");
 const CFG = require("./config");
 const C = require("./constants");
 const utils = require("./utils");
+const logger = require("./logger");
 const buttonManager = require("buttons");
 
-initButtons()
+initButtons();
 setInterval(syncButtons, CFG.SYNC_TIME);
 
 function initButtons() {
 	const buttons = buttonManager.getButtons();
-	for (let i = 0; i < buttons.length; i++) {
+	for(let i = 0; i < buttons.length; i++) {
 		initButton(buttons[i]);
 	}
 }
 
 function initButton(button) {
-	utils.initButtonEventTimestamp(button);
+	utils.initButtonState(button);
 	ha.sendButtonState(button, C.BUTTON_STATE_OFF);
 	ha.sendButtonBatteryState(button);
 	ha.sendButtonConnectivityState(button);
@@ -23,14 +24,14 @@ function initButton(button) {
 
 function syncButtons() {
 	const buttons = buttonManager.getButtons();
-	for (let i = 0; i < buttons.length; i++) {
+	for(let i = 0; i < buttons.length; i++) {
 		ha.sendButtonBatteryState(buttons[i]);
 		ha.sendButtonConnectivityState(buttons[i]);
 	}
 }
 
 function deleteButton(button) {
-	utils.deleteButtonEventTimestamp(button);
+	utils.deleteButtonState(button);
 	ha.sendRemovedState(button);
 }
 
@@ -43,30 +44,56 @@ buttonManager.on("buttonDeleted", function(obj) {
 });
 
 buttonManager.on("buttonReady", function(obj) {
-	ha.sendButtonConnectivityState(buttonManager.getButton(obj.bdaddr));
+	const button = buttonManager.getButton(obj.bdaddr);
+	logger.info("onButtonReady detected for " + utils.getButtonFriendlyName(button));
+	ha.sendButtonConnectivityState(button);
 });
 
 buttonManager.on("buttonDisconnected", function(obj) {
-	ha.sendButtonConnectivityState(buttonManager.getButton(obj.bdaddr));
+	const button = buttonManager.getButton(obj.bdaddr);
+	logger.warn("onButtonDisconnected detected for " + utils.getButtonFriendlyName(button));
+	ha.sendButtonConnectivityState(button);
 });
 
 buttonManager.on("buttonDown", function(obj) {
-	ha.sendButtonState(buttonManager.getButton(obj.bdaddr), C.BUTTON_STATE_ON);
+	const button = buttonManager.getButton(obj.bdaddr);
+	logger.info("onButtonDown detected for " + utils.getButtonFriendlyName(button));
+	utils.setButtonPressedTimestamp(button);
+	ha.sendButtonState(button, C.BUTTON_STATE_ON);
 });
 
 buttonManager.on("buttonUp", function(obj) {
-	ha.sendButtonState(buttonManager.getButton(obj.bdaddr), C.BUTTON_STATE_OFF);
+	const button = buttonManager.getButton(obj.bdaddr);
+	logger.info("onButtonUp detected for " + utils.getButtonFriendlyName(button));
+	const state = utils.getButtonState(button);
+	if(state.eventEmitted === C.CLICK_HOLD && state.pressedTimestamp - state.eventTimestamp < CFG.MIN_EVENTS_OFFSET) {
+		if(state.pressedTimestamp >= state.eventTimestamp) {
+			logger.warn("Press on " + utils.getButtonFriendlyName(button) + " started less than MIN_EVENTS_OFFSET(" + CFG.MIN_EVENTS_OFFSET + "ms) after the last '" + C.CLICK_HOLD + "' event, it is treated as part of the same hold and its click events will be ignored");
+		}
+		utils.setButtonEventTimestamp(button, Date.now());
+	} else if(state.pressedTimestamp !== C.INITIAL_STATE.pressedTimestamp) {
+		utils.setButtonEventEmitted(button, C.CLICK_WAITING);
+	}
+	ha.sendButtonState(button, C.BUTTON_STATE_OFF);
 });
 
 buttonManager.on("buttonSingleOrDoubleClickOrHold", function(obj) {
 	const timestamp = Date.now();
 	const button = buttonManager.getButton(obj.bdaddr);
-	if(timestamp - utils.getButtonEventTimestamp(button) >= CFG.MIN_EVENTS_OFFSET) {
-		utils.setButtonEventTimestamp(button, timestamp);
-		button.clickType = obj.isSingleClick ? C.CLICK_SINGLE : obj.isDoubleClick ? C.CLICK_DOUBLE : C.CLICK_HOLD;
-		ha.sendButtonEvent(button);
+	const lastEventEmitted = utils.getButtonEventEmitted(button);
+	const lastEventTimestamp = utils.getButtonEventTimestamp(button);
+	const clickType = obj.isSingleClick ? C.CLICK_SINGLE : obj.isDoubleClick ? C.CLICK_DOUBLE : C.CLICK_HOLD;
+	if(lastEventEmitted === C.CLICK_NONE && clickType !== C.CLICK_HOLD) {
+		logger.warn("Click type '" + clickType + "' event for " + utils.getButtonFriendlyName(button) + " ignored, the button has not been pressed since it was initialized");
+	} else if(lastEventEmitted !== C.CLICK_WAITING && clickType !== C.CLICK_HOLD) {
+		logger.warn("Click type '" + clickType + "' event for " + utils.getButtonFriendlyName(button) + " ignored, no new press (buttonDown -> buttonUp) since '" + lastEventEmitted + "' at " + lastEventTimestamp);
+	} else if(timestamp - lastEventTimestamp < CFG.MIN_EVENTS_OFFSET) {
+		const lastEventLabel = lastEventEmitted === C.CLICK_WAITING ? "the last event" : "'" + lastEventEmitted + "'";
+		logger.warn("Click type '" + clickType + "' event for " + utils.getButtonFriendlyName(button) + " ignored, emitted less than MIN_EVENTS_OFFSET(" + CFG.MIN_EVENTS_OFFSET + "ms) since " + lastEventLabel + " at " + lastEventTimestamp);
 	} else {
-		console.log("------------------------------------------");
-		console.log(timestamp +  ": Warning: Event for " + utils.getButtonFriendlyName(button) + " was ignored, last button's event was at: " + utils.getButtonEventTimestamp(button));
+		logger.info("Click type '" + clickType + "' event for " + utils.getButtonFriendlyName(button) + " emitted at " + timestamp);
+		utils.setButtonEventTimestamp(button, timestamp);
+		utils.setButtonEventEmitted(button, clickType);
+		ha.sendButtonEvent(button, clickType);
 	}
 });
