@@ -7,6 +7,7 @@
 	"license": "MIT",
 	"scripts": {
 		"test": "jest",
+		"test:coverage": "jest --coverage",
 		"lint": "eslint ."
 	},
 	"devDependencies": {
@@ -19,6 +20,17 @@
 		"testEnvironment": "node",
 		"moduleNameMapper": {
 			"^buttons$": "<rootDir>/test/mocks/buttons.js"
+		},
+		"collectCoverageFrom": [
+			"flic_hub_module/**/*.js"
+		],
+		"coverageThreshold": {
+			"global": {
+				"branches": 100,
+				"functions": 100,
+				"lines": 100,
+				"statements": 100
+			}
 		}
 	}
 }
