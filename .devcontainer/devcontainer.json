@@ -2,20 +2,26 @@
 	"name": "Flic Hub Module for Home Assistant",
 	"image": "mcr.microsoft.com/devcontainers/javascript-node:24-bookworm",
 	"mounts": [
+		"source=${localEnv:HOME}/.gemini,target=/home/node/.gemini,type=bind",
 		"source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind",
 		"source=${localEnv:HOME}/.claude.json,target=/home/node/.claude.json,type=bind"
 	],
 	"features": {
-		"ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+		"./features/google-antigravity": {},
+		"ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
 	},
-	"initializeCommand": "mkdir -p \"${localEnv:HOME}/.claude\" && touch \"${localEnv:HOME}/.claude.json\"",
+	"initializeCommand": "mkdir -p \"${localEnv:HOME}/.claude\" \"${localEnv:HOME}/.gemini\" && touch \"${localEnv:HOME}/.claude.json\"",
 	"postCreateCommand": "sudo apt-get update && sudo apt-get install -y tmux && npm ci",
 	"customizations": {
 		"vscode": {
 			"extensions": [
 				"eamodio.gitlens",
-				"Orta.vscode-jest",
-				"Anthropic.claude-code"
+				"orta.vscode-jest",
+				"anthropic.claude-code",
+				"dbaeumer.vscode-eslint",
+				"editorConfig.EditorConfig",
+				"google.google-antigravity",
+				"gitHub.vscode-github-actions"
 			]
 		}
 	}

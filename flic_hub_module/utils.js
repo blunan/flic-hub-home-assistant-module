@@ -8,8 +8,8 @@ function getButtonName(button) {
 exports.getButtonName = getButtonName;
 
 function getButtonFriendlyName(button, suffix) {
-	let friendlyName = button.name == null ? getButtonName(button) : button.name;
-	if (typeof suffix != 'undefined') {
+	let friendlyName = button.name ? button.name : getButtonName(button);
+	if(typeof suffix !== 'undefined') {
 		friendlyName = friendlyName + " " + suffix;
 	}
 	return friendlyName;
@@ -18,7 +18,7 @@ function getButtonFriendlyName(button, suffix) {
 exports.getButtonFriendlyName = getButtonFriendlyName;
 
 exports.getBatteryIcon = function(batteryLevel) {
-	if(typeof batteryLevel != 'number' || isNaN(batteryLevel)) {
+	if(typeof batteryLevel !== 'number' || isNaN(batteryLevel)) {
 		return 'mdi:battery-unknown';
 	} else if(batteryLevel < 5) {
 		return 'mdi:battery-outline';
@@ -34,28 +34,49 @@ exports.getConnectivityIcon = function(ready) {
 	return ready ? 'mdi:bluetooth' : 'mdi:bluetooth-off';
 }
 
-const buttonEventTimestamps = {};
+const buttonEventStates = new Map();
 
-exports.initButtonEventTimestamp = function(button) {
-	setButtonEventTimestamp(button, Date.now() - CFG.MIN_EVENTS_OFFSET);
+function initButtonState(button) {
+	buttonEventStates.set(button.bdaddr, {... C.INITIAL_STATE});
 }
 
-function setButtonEventTimestamp(button, timestamp) {
-	buttonEventTimestamps[getButtonName(button)] = timestamp;
+exports.initButtonState = initButtonState;
+
+function getOrCreateButtonState(button) {
+	if(!buttonEventStates.has(button.bdaddr)) {
+		initButtonState(button);
+	}
+	return buttonEventStates.get(button.bdaddr);
 }
 
-exports.setButtonEventTimestamp = setButtonEventTimestamp;
+function findButtonState(button) {
+	return buttonEventStates.get(button.bdaddr) || C.INITIAL_STATE;
+}
+
+exports.setButtonEventTimestamp = function(button, timestamp) {
+	getOrCreateButtonState(button).eventTimestamp = timestamp;
+}
 
 exports.getButtonEventTimestamp = function(button) {
-	const buttonName = getButtonName(button);
-	if (buttonEventTimestamps.hasOwnProperty(buttonName))
-		return buttonEventTimestamps[buttonName];
-	return 0;
+	return findButtonState(button).eventTimestamp;
 }
 
-exports.deleteButtonEventTimestamp = function(button) {
-	const buttonName = getButtonName(button);
-	if (buttonEventTimestamps.hasOwnProperty(buttonName))
-		return delete buttonEventTimestamps[buttonName];
-	return false;
+exports.setButtonPressedTimestamp = function(button) {
+	getOrCreateButtonState(button).pressedTimestamp = Date.now();
+}
+
+exports.getButtonState = function(button) {
+	return {... findButtonState(button)};
+}
+
+exports.setButtonEventEmitted = function(button, event) {
+	getOrCreateButtonState(button).eventEmitted = event;
+}
+
+exports.getButtonEventEmitted = function(button) {
+	return findButtonState(button).eventEmitted;
+}
+
+exports.deleteButtonState = function(button) {
+	return buttonEventStates.delete(button.bdaddr);
 }

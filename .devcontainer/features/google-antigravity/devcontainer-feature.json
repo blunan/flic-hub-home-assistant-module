@@ -1,0 +1,15 @@
+{
+	"name": "Google Antigravity CLI",
+	"id": "google-antigravity",
+	"version": "1.0.0",
+	"description": "Installs the Google Antigravity CLI globally",
+	"options": {},
+	"documentationURL": "https://antigravity.google/docs/cli/overview",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"google.google-antigravity"
+			]
+		}
+	}
+}
