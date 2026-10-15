@@ -8,7 +8,7 @@
 
 This module uses the [Flic Hub SDK](https://flic.io/flic-hub-sdk) to send your Flic Button events and states to the [Home Assistant REST API](https://developers.home-assistant.io/docs/api/rest). No cloud, no bridge, no extra hardware — the hub talks to Home Assistant directly.
 
-> If you have any automations running with the **flicd add-on** from [pschmitt's addon](https://github.com/pschmitt/home-assistant-addons) they will continue to work after pairing the same Flic Button to the Flic Hub as the events sent by the module keeps the same [type and data](https://www.home-assistant.io/integrations/flic).
+> If you have any automations running with the **flicd add-on** from [pschmitt's addon](https://github.com/pschmitt/home-assistant-addons) they will continue to work after pairing the same Flic Button to the Flic Hub, as the events sent by the module keep the same [type and data](https://www.home-assistant.io/integrations/flic) (`button_name`, `button_address` and `click_type`; only `queued_time` is not sent).
 
 ## ✨ Features
 
@@ -49,10 +49,10 @@ Then edit the `config.js` file so the Flic Hub can connect to your Home Assistan
 | `SYNC_TIME`              | Integer | How often (in milliseconds) the battery and connectivity status of all your buttons is re-sent to Home Assistant — see [How the module behaves](#-how-the-module-behaves). |
 | `WARNING_BATTERY_LEVEL`  | Integer | Battery percentage at or below which the battery sensor shows a warning icon — see [How the module behaves](#-how-the-module-behaves). |
 | `LOG_LEVEL`              | Constant | How much the module writes to the Flic Hub IDE console. Use `C.LOG_LEVEL_WARNING` while setting up and tweaking the config. Once everything works, switch to `C.LOG_LEVEL_ERROR` for long-term use so only real problems are logged. `C.LOG_LEVEL_INFO` and `C.LOG_LEVEL_DEBUG` add detail for troubleshooting; `C.LOG_LEVEL_NONE` silences everything. |
-| `SERVER_HOST`            | String  | The URL where your Home Assistant instance is running. Example: `https://192.168.XXX.YYY:8123`. |
+| `SERVER_HOST`            | String  | The URL where your Home Assistant instance is running, without a trailing `/`. Example: `https://192.168.XXX.YYY:8123`. |
 | `SERVER_AUTH_TOKEN`      | String  | A **Long-Lived Access Token** obtained from [your profile](https://www.home-assistant.io/docs/authentication/#your-account-profile) `https://192.168.XXX.YYY:8123/profile`. |
 | `USE_CUSTOM_CERTIFICATE` | Boolean | Enables the use of a custom certificate for HTTPS, ideal for self signed certificates. |
-| `VERIFY_CERTIFICATE`     | Boolean | If a custom certificate is used, whether to validate the hostname in the URL against the Subject Alternative Name extension in the server's certificate. |
+| `VERIFY_CERTIFICATE`     | Boolean | If a custom certificate is used, whether to also check that the address in `SERVER_HOST` matches the one in the server's certificate (its Subject Alternative Name). The certificate itself is always checked against `CUSTOM_CERTIFICATES`; this setting only adds the address check. Turn it on if your certificate includes your Home Assistant address, and always if `CUSTOM_CERTIFICATES` holds a CA certificate rather than the server's own. |
 | `CUSTOM_CERTIFICATES`    | String  | (From [Flic Hub Documentation](https://hubsdk.flic.io/static/documentation/#43_makerequest)) One or more certificates to trust in PEM format. Can be both end entity certificates or CA certificates. If multiple certificates, concatenate them. Extraneous whitespace is allowed. |
 
 > ⚠️ Be sure you have the **API** component enabled in your Home Assistant instance (enabled by default). In case you have any troubles see their [documentation](https://www.home-assistant.io/integrations/api) to know how to enable it.
@@ -72,6 +72,8 @@ Then edit the `config.js` file so the Flic Hub can connect to your Home Assistan
 * Below 5% → empty battery icon.
 * At or below `WARNING_BATTERY_LEVEL` (and at least 5%) → warning icon. Setting `WARNING_BATTERY_LEVEL` lower than 5 turns the warning off.
 * Anything else → the icon closest to the level (95% and up shows a full battery).
+
+**Sensor names.** Each button gets three sensors named after its Bluetooth address, e.g. `binary_sensor.flic_80e4da779fc7` (see [Flic button card](#-flic-button-card)). Their display names use the name you gave the button in the Flic app; a button without a name is shown as `flic_<address>` instead.
 
 **Regular updates.** Every `SYNC_TIME` milliseconds the module re-sends the battery and connectivity status of all your buttons, so Home Assistant stays up to date even when no one presses anything.
 
@@ -100,7 +102,7 @@ automation:
 
 Where the possible values for **click_type** are: `single`, `double` and `hold`. Each event also carries `button_address`, the button's Bluetooth address (e.g. `80:e4:da:77:9f:c7`).
 
-Alternatively import and use the [blueprint](flic-button.yaml).
+Alternatively import and use the [blueprint](flic-button.yaml) (requires Home Assistant 2024.10 or newer).
 
 ## 🗂️ Flic button card
 
