@@ -71,6 +71,14 @@ describe("sendButtonBatteryState", () => {
 		expect(content.state).toBe(50);
 		expect(content.attributes.icon).toBe("mdi:battery-50");
 	});
+
+	test("reports 0% battery as numeric 0 rather than unknown", () => {
+		ha.sendButtonBatteryState({ bdaddr: ADDR, name: null, batteryStatus: 0 });
+
+		const content = JSON.parse(lastRequest().content);
+		expect(content.state).toBe(0);
+		expect(content.attributes.icon).toBe("mdi:battery-outline");
+	});
 });
 
 describe("sendButtonConnectivityState", () => {
