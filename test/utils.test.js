@@ -21,20 +21,16 @@ describe("getButtonName", () => {
 });
 
 describe("getButtonFriendlyName", () => {
-	test("uses button.name when set", () => {
-		expect(utils.getButtonFriendlyName(button("80:e4:da:78:b0:5d", { name: "Kitchen" }))).toBe("Kitchen");
-	});
-
-	test("falls back to getButtonName when name is null", () => {
-		expect(utils.getButtonFriendlyName(button("80:e4:da:78:b0:5d", { name: null }))).toBe("flic_80e4da78b05d");
-	});
-
-	test("appends the suffix when the name is set", () => {
-		expect(utils.getButtonFriendlyName(button("80:e4:da:78:b0:5d", { name: "Kitchen" }), "Battery")).toBe("Kitchen Battery");
-	});
-
-	test("appends the suffix when falling back to getButtonName", () => {
-		expect(utils.getButtonFriendlyName(button("80:e4:da:78:b0:5d", { name: null }), "Connectivity")).toBe("flic_80e4da78b05d Connectivity");
+	// The SDK types `name` as a String, so an unnamed button may report "" rather than null;
+	// both must fall back to getButtonName instead of producing a blank friendly name.
+	test.each([
+		["Kitchen", undefined, "Kitchen"],
+		["Kitchen", "Battery", "Kitchen Battery"],
+		[null, undefined, "flic_80e4da78b05d"],
+		[null, "Connectivity", "flic_80e4da78b05d Connectivity"],
+		["", "Battery", "flic_80e4da78b05d Battery"],
+	])("name %p with suffix %p is %p", (name, suffix, expected) => {
+		expect(utils.getButtonFriendlyName(button("80:e4:da:78:b0:5d", { name }), suffix)).toBe(expected);
 	});
 });
 
@@ -127,14 +123,13 @@ describe("getBatteryIcon", () => {
 		expect(utils.getBatteryIcon(level)).toBe("mdi:battery-unknown");
 	});
 
+	// Unusable levels are left out: they return before the threshold is read, and the
+	// test above already pins them to the exact icon.
 	test.each([0, 5, 8, 10, 25, 95])(
 		"never emits an icon outside the real MDI set (WARNING_BATTERY_LEVEL = %i)",
 		(warningLevel) => {
 			setWarningLevel(warningLevel);
 			for (let level = 0; level <= 100; level++) {
-				expect(VALID_BATTERY_ICONS).toContain(utils.getBatteryIcon(level));
-			}
-			for (const level of UNUSABLE_LEVELS) {
 				expect(VALID_BATTERY_ICONS).toContain(utils.getBatteryIcon(level));
 			}
 		}

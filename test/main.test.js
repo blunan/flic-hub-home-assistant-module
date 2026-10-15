@@ -85,17 +85,17 @@ describe("on load", () => {
 });
 
 describe("periodic sync", () => {
-	test("every SYNC_TIME tick reports battery and connectivity, but not state", () => {
-		buttonManager.__setButtons([buttonA, buttonB]);
+	test("every SYNC_TIME tick reports battery and connectivity of the current buttons, but not state", () => {
+		// The list differs from the one seen at load (buttonB removed, buttonC paired
+		// since), so the sync must re-read it on every tick.
+		const buttonC = mkButton("aa:aa:aa:00:00:20");
+		buttonManager.__setButtons([buttonA, buttonC]);
 		// Two ticks: proves the sync recurs (setInterval), not a one-shot.
 		jest.advanceTimersByTime(2 * CFG.SYNC_TIME);
 
-		expect(ha.sendButtonBatteryState).toHaveBeenCalledTimes(4);
-		expect(ha.sendButtonBatteryState).toHaveBeenCalledWith(buttonA);
-		expect(ha.sendButtonBatteryState).toHaveBeenCalledWith(buttonB);
-		expect(ha.sendButtonConnectivityState).toHaveBeenCalledTimes(4);
-		expect(ha.sendButtonConnectivityState).toHaveBeenCalledWith(buttonA);
-		expect(ha.sendButtonConnectivityState).toHaveBeenCalledWith(buttonB);
+		const perTick = [[buttonA], [buttonC]];
+		expect(ha.sendButtonBatteryState.mock.calls).toEqual([...perTick, ...perTick]);
+		expect(ha.sendButtonConnectivityState.mock.calls).toEqual([...perTick, ...perTick]);
 		expect(ha.sendButtonState).not.toHaveBeenCalled();
 	});
 });
@@ -130,21 +130,14 @@ describe("button lifecycle events", () => {
 		expect(utils.getButtonState(b)).toEqual(C.INITIAL_STATE);
 	});
 
-	test("buttonReady reports connectivity for the resolved button", () => {
-		const b = mkButton("aa:aa:aa:00:00:03");
+	test.each([
+		["buttonReady", "aa:aa:aa:00:00:03"],
+		["buttonDisconnected", "aa:aa:aa:00:00:04"],
+	])("%s reports connectivity for the resolved button", (event, bdaddr) => {
+		const b = mkButton(bdaddr);
 		buttonManager.__addButton(b);
 
-		fire("buttonReady", b);
-
-		expect(ha.sendButtonConnectivityState).toHaveBeenCalledTimes(1);
-		expect(ha.sendButtonConnectivityState).toHaveBeenCalledWith(b);
-	});
-
-	test("buttonDisconnected reports connectivity for the resolved button", () => {
-		const b = mkButton("aa:aa:aa:00:00:04");
-		buttonManager.__addButton(b);
-
-		fire("buttonDisconnected", b);
+		fire(event, b);
 
 		expect(ha.sendButtonConnectivityState).toHaveBeenCalledTimes(1);
 		expect(ha.sendButtonConnectivityState).toHaveBeenCalledWith(b);
@@ -244,20 +237,7 @@ describe("buttonSingleOrDoubleClickOrHold", () => {
 		expect(utils.getButtonEventEmitted(b)).toBe(C.CLICK_SINGLE);
 	});
 
-	test("isDoubleClick maps to click type double", () => {
-		const b = mkButton("aa:aa:aa:00:00:08");
-		buttonManager.__addButton(b);
-
-		down(b); advance(PRESS_MS); up(b);
-		advance(PRESS_MS);
-		down(b); advance(PRESS_MS); up(b);
-		advance(CLICK_REPORT_MS);
-		clickEvent(b, DOUBLE);
-
-		expect(sentClickTypes()).toEqual([C.CLICK_DOUBLE]);
-	});
-
-	test("a double's spurious release single is ignored", () => {
+	test("a double click is sent as 'double'; its spurious release single is ignored", () => {
 		const b = mkButton("aa:aa:aa:00:00:17");
 		buttonManager.__addButton(b);
 
@@ -442,5 +422,41 @@ describe("hold", () => {
 		}
 
 		expect(sentClickTypes()).toEqual([C.CLICK_HOLD, C.CLICK_HOLD]);
+	});
+});
+
+// The rest of this file compares against constants.js, so it can't notice a constant
+// whose value changes. These values are what Home Assistant receives and what user
+// automations, the blueprint and flicd-era automations match on, so here they are
+// spelled out as literals.
+describe("Home Assistant contract", () => {
+	test("gestures reach HA as click types 'single', 'double' and 'hold'", () => {
+		const b = mkButton("aa:aa:aa:00:00:1e");
+		buttonManager.__addButton(b);
+
+		single(b);
+		advance(CFG.MIN_EVENTS_OFFSET);
+		down(b); advance(PRESS_MS); up(b);
+		advance(PRESS_MS);
+		down(b); advance(PRESS_MS); up(b);
+		advance(CLICK_REPORT_MS);
+		clickEvent(b, DOUBLE);
+		advance(CFG.MIN_EVENTS_OFFSET);
+		down(b);
+		advance(1_000);
+		clickEvent(b, HOLD);
+
+		expect(sentClickTypes()).toEqual(["single", "double", "hold"]);
+	});
+
+	test("the button's binary_sensor is 'on' while pressed and 'off' once released", () => {
+		const b = mkButton("aa:aa:aa:00:00:1f");
+		buttonManager.__addButton(b);
+
+		down(b);
+		expect(ha.sendButtonState).toHaveBeenLastCalledWith(b, "on");
+		advance(PRESS_MS);
+		up(b);
+		expect(ha.sendButtonState).toHaveBeenLastCalledWith(b, "off");
 	});
 });
