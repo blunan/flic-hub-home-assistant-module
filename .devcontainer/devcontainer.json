@@ -15,10 +15,13 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"Eamodio.gitlens",
-				"Orta.vscode-jest",
-				"Anthropic.claude-code",
-				"Google.google-antigravity"
+				"eamodio.gitlens",
+				"orta.vscode-jest",
+				"anthropic.claude-code",
+				"dbaeumer.vscode-eslint",
+				"editorConfig.EditorConfig",
+				"google.google-antigravity",
+				"gitHub.vscode-github-actions"
 			]
 		}
 	}

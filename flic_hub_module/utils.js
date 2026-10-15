@@ -8,7 +8,7 @@ function getButtonName(button) {
 exports.getButtonName = getButtonName;
 
 function getButtonFriendlyName(button, suffix) {
-	let friendlyName = button.name == null ? getButtonName(button) : button.name;
+	let friendlyName = button.name ? button.name : getButtonName(button);
 	if(typeof suffix !== 'undefined') {
 		friendlyName = friendlyName + " " + suffix;
 	}
@@ -53,31 +53,25 @@ function findButtonState(button) {
 	return buttonEventStates.get(button.bdaddr) || C.INITIAL_STATE;
 }
 
-function setButtonEventTimestamp(button, timestamp) {
+exports.setButtonEventTimestamp = function(button, timestamp) {
 	getOrCreateButtonState(button).eventTimestamp = timestamp;
 }
-
-exports.setButtonEventTimestamp = setButtonEventTimestamp;
 
 exports.getButtonEventTimestamp = function(button) {
 	return findButtonState(button).eventTimestamp;
 }
 
-function setButtonPressedTimestamp(button) {
+exports.setButtonPressedTimestamp = function(button) {
 	getOrCreateButtonState(button).pressedTimestamp = Date.now();
 }
-
-exports.setButtonPressedTimestamp = setButtonPressedTimestamp;
 
 exports.getButtonState = function(button) {
 	return {... findButtonState(button)};
 }
 
-function setButtonEventEmitted(button, event) {
+exports.setButtonEventEmitted = function(button, event) {
 	getOrCreateButtonState(button).eventEmitted = event;
 }
-
-exports.setButtonEventEmitted = setButtonEventEmitted;
 
 exports.getButtonEventEmitted = function(button) {
 	return findButtonState(button).eventEmitted;

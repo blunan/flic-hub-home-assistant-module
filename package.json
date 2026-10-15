@@ -6,9 +6,13 @@
 	"author": "Brayan Luna <blun4n@gmail.com> (https://www.blunan.com)",
 	"license": "MIT",
 	"scripts": {
-		"test": "jest"
+		"test": "jest",
+		"lint": "eslint ."
 	},
 	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"eslint": "^10.11.0",
+		"globals": "^17.12.0",
 		"jest": "^30"
 	},
 	"jest": {
